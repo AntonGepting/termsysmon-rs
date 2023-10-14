@@ -27,6 +27,15 @@ const L_DISKS: &str =
 const L_NETWORK: &str =
     "─ Network ──────────────────────────────────────────────────────────────────────";
 
+// into float GiB (n / 1024^3)
+pub fn to_gib(n: u64) -> f64 {
+    n as f64 / (usize::pow(1024, 3) as f64)
+}
+
+// into float GHz (n / 1000.0)
+pub fn to_ghz(n: u64) -> f64 {
+    n as f64 / 1000.0
+}
 // NOTE: group of `println!()` calls produces flickering, changed to string building and print
 fn build_page(sys: &System) -> String {
     let mut s = String::new();
@@ -57,7 +66,7 @@ fn build_page(sys: &System) -> String {
 
     s += &format!(" Uptime: {} ({})\n", sys.uptime(), sys.boot_time());
 
-    s += &format!("{}", L_CPU);
+    s += &format!("{}\n", L_CPU);
     s += &format!(
         " CPU: {} (Cores: {}) ({} GHz)\n",
         sys.global_cpu_info().brand(),
@@ -91,7 +100,7 @@ fn build_page(sys: &System) -> String {
         to_gib(sys.total_swap()),
     );
 
-    s += &format!("{}", L_DISKS);
+    s += &format!("{}\n", L_DISKS);
     for disk in sys.disks() {
         s += &format!(
             "  {} {:<30} {} {} \t {:>10.3} GiB {:>10.3} GiB {}\n",
@@ -122,16 +131,6 @@ fn build_page(sys: &System) -> String {
     s
 }
 
-// into float GiB (n / 1024^3)
-fn to_gib(n: u64) -> f64 {
-    n as f64 / (usize::pow(1024, 3) as f64)
-}
-
-// into float GHz (n / 1000.0)
-fn to_ghz(n: u64) -> f64 {
-    n as f64 / 1000.0
-}
-
 fn disk_kind_to_string(disk_kind: DiskKind) -> String {
     match disk_kind {
         DiskKind::HDD => "HDD".to_string(),
@@ -159,9 +158,35 @@ fn update() {
     }
 }
 
+// 100ms = like conky average (0.7)
+// 500ms = like conky average (0.3)
+// 1000ms = not seen in top processes
+fn update2() {
+    // strings produced once on start
+    let mut once = String::new();
+    once += &from_sys_class_dmi().unwrap();
+    once += &from_proc_cpuinfo().unwrap();
+
+    // update
+    loop {
+        let mut s = String::new();
+        // update output on screen begin, instead of concatenation
+        print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
+
+        // strings updated every ... seconds
+        s += &once;
+        s += &from_proc_meminfo().unwrap();
+        s += &from_sys_class_net().unwrap();
+        s += &from_sys_block().unwrap();
+
+        print!("{}", s);
+
+        sleep(Duration::from_millis(1000));
+    }
+}
+
 fn main() {
-    from_proc_cpuinfo();
-    from_proc_meminfo();
-    from_sys_class_net();
-    // update();
+    //    calendar();
+    //update();
+    update2();
 }

@@ -1,0 +1,2 @@
+// uptime
+// `/proc/uptime`
