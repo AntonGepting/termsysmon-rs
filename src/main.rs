@@ -5,6 +5,9 @@ use std::time::Duration;
 mod system_info;
 use system_info::*;
 
+mod frontend;
+use frontend::*;
+
 use chrono::prelude::*;
 use sysinfo::{
     Cpu, CpuExt, CpuRefreshKind, DiskExt, DiskKind, NetworkExt, NetworksExt, RefreshKind, System,

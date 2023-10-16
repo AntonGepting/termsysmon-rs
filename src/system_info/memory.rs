@@ -2,10 +2,10 @@
 /// ```text
 /// /proc/meminfo
 /// ```
-use super::common::{kib_to_gib, percent};
-use std::fs::read_to_string;
 use std::io::Error;
 use std::str::FromStr;
+
+use crate::frontend::get_string_from_file;
 
 const PROC_MEMINFO: &str = "/proc/meminfo";
 
@@ -24,7 +24,7 @@ pub struct MemInfo {
 }
 
 // parse str value into usize
-pub fn parse_meminfo_usize_value(line: &str) -> usize {
+fn parse_meminfo_usize_value(line: &str) -> usize {
     line.splitn(2, ':')
         .nth(1)
         .map(|x| x.trim())
@@ -36,10 +36,12 @@ pub fn parse_meminfo_usize_value(line: &str) -> usize {
         .unwrap_or(0)
 }
 
-// parse structured text from file `/proc/meminfo` into struct
-pub fn get_meminfo() -> Result<MemInfo, Error> {
-    let buf = read_to_string(PROC_MEMINFO)?;
-    buf.parse()
+impl MemInfo {
+    // parse structured text from file `/proc/meminfo` into struct
+    pub fn get() -> Result<Self, Error> {
+        let buf = get_string_from_file(PROC_MEMINFO)?;
+        buf.parse()
+    }
 }
 
 impl FromStr for MemInfo {
@@ -73,36 +75,4 @@ impl FromStr for MemInfo {
 
         Ok(mem_info)
     }
-}
-
-pub fn from_proc_meminfo() -> Result<String, Error> {
-    let mut s = String::new();
-
-    let meminfo = get_meminfo()?;
-
-    // percent used mem
-    let mem_used = meminfo.mem_total - meminfo.mem_available;
-    let percent_mem_used = percent(mem_used, meminfo.mem_total);
-
-    // show free, total, percent used mem
-    s += &format!(
-        "  RAM:  {:.2} GiB / {:.2} GiB ({:.2} %)\n",
-        kib_to_gib(meminfo.mem_available),
-        kib_to_gib(meminfo.mem_total),
-        percent_mem_used
-    );
-
-    // percent used swap
-    let swap_used = meminfo.swap_total - meminfo.swap_free;
-    let percent_swap_used = percent(swap_used, meminfo.swap_total);
-
-    // show free, total, percent used swap
-    s += &format!(
-        "  Swap: {:.2} GiB / {:.2} GiB ({:.2} %)\n",
-        kib_to_gib(meminfo.swap_free),
-        kib_to_gib(meminfo.swap_total),
-        percent_swap_used
-    );
-
-    Ok(s)
 }
