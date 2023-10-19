@@ -7,17 +7,21 @@
 /// /sys/block/*/dm/name
 /// /sys/block/*/loop
 /// /sys/block/*/backing_file
+/// /sys/block/*/device/vpd_pg80
 ///
 /// (loop|fd|md|dm-|sr|scd|st|sd|mmc|nvme|nbd|ram)[a-z0-9]
 ///
 /// /proc/partitions
+/// /dev/disk/by-id/
+/// /proc/self/mountinfo
+/// /proc/mounts
 ///
 /// statvfs
 /// ```
 use std::io::Error;
 use std::path::Path;
 
-use super::get_string_from_file;
+use crate::backend::get_string_from_file;
 
 /// `/sys/block`
 const SYS_BLOCK: &str = "/sys/block";
@@ -78,7 +82,7 @@ pub struct BlockDeviceInfo {
     // `hidden`
     pub hidden: bool,
     // `size`
-    pub size: usize,
+    pub size: u64,
 }
 
 impl BlockDeviceInfo {
@@ -107,7 +111,7 @@ impl BlockDeviceInfo {
 
         let f = path.join(SIZE);
         if let Ok(size) = get_string_from_file(f) {
-            device.size = size.parse().unwrap_or(0) * BLOCK_SIZE_DEFAULT;
+            device.size = (size.parse().unwrap_or(0) * BLOCK_SIZE_DEFAULT) as u64;
         }
 
         let f = path.join(DEVICE_MODEL);

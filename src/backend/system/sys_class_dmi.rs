@@ -9,7 +9,7 @@
 /// ```
 use std::io::Error;
 
-use super::get_string_from_file;
+use crate::backend::get_string_from_file;
 
 const SYS_CLASS_DMI: &str = "/sys/class/dmi/id/";
 const BIOS_VERSION: &str = "bios_version";

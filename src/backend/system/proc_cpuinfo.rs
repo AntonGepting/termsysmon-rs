@@ -1,6 +1,7 @@
 /// get info from procfs
 /// ```text
 /// /proc/cpuinfo
+/// sysconf(3)
 /// ```
 use std::fs::read_to_string;
 use std::io::Error;

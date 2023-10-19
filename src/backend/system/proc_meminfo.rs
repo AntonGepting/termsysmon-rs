@@ -2,10 +2,16 @@
 /// ```text
 /// /proc/meminfo
 /// ```
+///
+/// NOTE: tested vs `crate::procfs`, benchmarking:
+/// * better performance (x6 - x7 performance advantage)
+/// * less flexibility
+/// * less values
+///
 use std::io::Error;
 use std::str::FromStr;
 
-use crate::frontend::get_string_from_file;
+use crate::get_string_from_file;
 
 const PROC_MEMINFO: &str = "/proc/meminfo";
 
@@ -23,7 +29,8 @@ pub struct MemInfo {
     pub swap_free: usize,
 }
 
-// parse str value into usize
+/// parse str value into usize
+/// (e.g. `MemTotal: 123456 kB` -> `123456`)
 fn parse_meminfo_usize_value(line: &str) -> usize {
     line.splitn(2, ':')
         .nth(1)
@@ -52,23 +59,23 @@ impl FromStr for MemInfo {
 
         for line in s.lines() {
             // MemTotal
-            if line.starts_with("MemTotal") {
+            if line.starts_with("MemTotal:") {
                 mem_info.mem_total = parse_meminfo_usize_value(line)
             }
             // MemFree
-            else if line.starts_with("MemFree") {
+            else if line.starts_with("MemFree:") {
                 mem_info.mem_free = parse_meminfo_usize_value(line)
             }
             // MemAvailable
-            else if line.starts_with("MemAvailable") {
+            else if line.starts_with("MemAvailable:") {
                 mem_info.mem_available = parse_meminfo_usize_value(line)
             }
             // SwapTotal
-            else if line.starts_with("SwapTotal") {
+            else if line.starts_with("SwapTotal:") {
                 mem_info.swap_total = parse_meminfo_usize_value(line)
             }
             // SwapFree
-            else if line.starts_with("SwapFree") {
+            else if line.starts_with("SwapFree:") {
                 mem_info.swap_free = parse_meminfo_usize_value(line)
             }
         }

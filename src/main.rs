@@ -2,8 +2,11 @@ use std::str;
 use std::thread::sleep;
 use std::time::Duration;
 
-mod system_info;
-use system_info::*;
+extern crate nix;
+extern crate procfs;
+
+mod backend;
+use backend::*;
 
 mod frontend;
 use frontend::*;
