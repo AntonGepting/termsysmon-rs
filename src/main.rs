@@ -149,19 +149,19 @@ fn update() {
     let mut sys = System::new_all();
     sys.refresh_all();
 
-    loop {
-        sys.refresh_cpu();
-        sys.refresh_memory();
-        sys.refresh_disks_list();
+    // loop {
+    sys.refresh_cpu();
+    sys.refresh_memory();
+    sys.refresh_disks_list();
 
-        print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
+    print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
 
-        // print_page();
-        let s = build_page(&sys);
-        print!("{}", s);
+    // print_page();
+    let s = build_page(&sys);
+    print!("{}", s);
 
-        sleep(Duration::from_millis(5000));
-    }
+    // sleep(Duration::from_millis(5000));
+    // }
 }
 
 // 100ms = like conky average (0.7)
@@ -174,25 +174,39 @@ fn update2() {
     once += &from_proc_cpuinfo().unwrap();
 
     // update
-    loop {
-        let mut s = String::new();
-        // update output on screen begin, instead of concatenation
-        print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
+    // loop {
+    let mut s = String::new();
+    // update output on screen begin, instead of concatenation
+    print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
 
-        // strings updated every ... seconds
-        s += &once;
-        s += &from_proc_meminfo().unwrap();
-        s += &from_sys_class_net().unwrap();
-        s += &from_sys_block().unwrap();
+    // strings updated every ... seconds
+    s += &once;
+    s += &from_proc_meminfo().unwrap();
+    s += &from_sys_class_net().unwrap();
+    s += &from_sys_block().unwrap();
 
-        print!("{}", s);
+    print!("{}", s);
 
-        sleep(Duration::from_millis(1000));
-    }
+    // sleep(Duration::from_millis(1000));
+    // }
+}
+
+#[test]
+fn update_test() {
+    use crate::bench;
+
+    bench(&update, Some(100));
+}
+
+#[test]
+fn update2_test() {
+    use crate::bench;
+
+    bench(&update2, Some(100));
 }
 
 fn main() {
     //    calendar();
-    //update();
+    // update();
     update2();
 }
