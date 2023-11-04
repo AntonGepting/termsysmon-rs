@@ -41,12 +41,17 @@ pub fn bench(cb: &dyn Fn(), n: Option<u128>) {
     println!("Avg. exec time: {} ms ({} iterations)", t_avg, n);
 }
 
+// print progress bar string
+// x - current value
+// total - 100 % value
+// length - progress bar lenght in symbols
 pub fn progress_bar(x: f64, total: f64, length: u64) -> String {
     let mut s = String::new();
 
     let n = (length as f64 * x / total).ceil() as u64;
     for _ in 0..n {
-        s.push('x');
+        // # █
+        s.push('#');
     }
     for _ in 0..(length - n) as usize {
         s.push('-');
