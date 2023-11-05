@@ -22,7 +22,7 @@ pub fn from_proc_meminfo() -> Result<String, ProcError> {
         ICON_RAM,
         kib_to_gib(mem_used as f64),
         kib_to_gib(meminfo.mem_total as f64),
-        progress_bar(mem_used as f64, meminfo.mem_total as f64, 20),
+        progress_bar(mem_used, meminfo.mem_total, 20),
         percent_mem_used
     );
 
@@ -36,7 +36,7 @@ pub fn from_proc_meminfo() -> Result<String, ProcError> {
         ICON_SWAP,
         kib_to_gib(swap_used as f64),
         kib_to_gib(meminfo.swap_total as f64),
-        progress_bar(swap_used as f64, meminfo.swap_total as f64, 20),
+        progress_bar(swap_used, meminfo.swap_total, 20),
         percent_swap_used
     );
 
