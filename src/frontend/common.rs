@@ -1,7 +1,3 @@
-use std::fs::read_to_string;
-use std::io::Error;
-use std::path::Path;
-
 // bytes into float GiB (n / 1024^3)
 pub fn b_to_gib(n: u64) -> f64 {
     (n as f64) / (usize::pow(1024, 3) as f64)
@@ -44,16 +40,18 @@ pub fn bench(cb: &dyn Fn(), n: Option<u128>) {
 // print progress bar string
 // x - current value
 // total - 100 % value
-// length - progress bar lenght in symbols
-pub fn progress_bar(x: f64, total: f64, length: u64) -> String {
+// pub fn progress_bar(x: f64, total: f64, length: u64) -> String {
+pub fn progress_bar(x: usize, total: usize, length: usize) -> String {
     let mut s = String::new();
 
-    let n = (length as f64 * x / total).ceil() as u64;
+    // let n = (length as f64 * x / total).ceil() as u64;
+    let n = length * x / total;
     for _ in 0..n {
         // # █
         s.push('#');
     }
-    for _ in 0..(length - n) as usize {
+    // for _ in 0..(length - n) as usize {
+    for _ in 0..(length - n) {
         s.push('-');
     }
     format!("[{}]", s)
@@ -61,6 +59,6 @@ pub fn progress_bar(x: f64, total: f64, length: u64) -> String {
 
 #[test]
 fn progress_bar_test() {
-    let s = progress_bar(50 as f64, 100 as f64, 12);
+    let s = progress_bar(100, 100, 12);
     println!("{}", s);
 }
