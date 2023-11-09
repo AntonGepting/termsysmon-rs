@@ -8,7 +8,7 @@ pub const ICON_DM: &str = "";
 pub const ICON_WIFI: &str = "";
 pub const ICON_BR: &str = "";
 pub const ICON_ETH: &str = "󰈀";
-pub const ICON_VETH: &str = "";
+pub const ICON_VETH: &str = "󰈀";
 pub const ICON_LO: &str = ""; // NOTE: string only looks empty for some fonts, there is a glyph actually
 pub const ICON_DOCKER: &str = "󰡨";
 
