@@ -1,3 +1,4 @@
+use crate::frontend::progress_bar;
 use crate::nix::sys::sysinfo::sysinfo;
 use crate::{b_to_gib, percent};
 use std::io::Error;
@@ -13,9 +14,10 @@ pub fn from_sysinfo() -> Result<String, Error> {
 
     // show free, total, percent used mem
     s += &format!(
-        "  RAM:  {:>5.2} GiB / {:>5.2} GiB ({:>5.2} %)\n",
-        b_to_gib(sysinfo.ram_unused()),
+        "  RAM  {:>5.2} GiB / {:>5.2} GiB {} ({:>5.2} %)\n",
+        b_to_gib(ram_used),
         b_to_gib(sysinfo.ram_total()),
+        progress_bar(ram_used as usize, sysinfo.ram_total() as usize, 20),
         percent_mem_used
     );
 
@@ -25,9 +27,10 @@ pub fn from_sysinfo() -> Result<String, Error> {
 
     // show free, total, percent used swap
     s += &format!(
-        "  Swap: {:>5.2} GiB / {:>5.2} GiB ({:>5.2} %)\n",
-        b_to_gib(sysinfo.swap_free()),
+        "  Swap {:>5.2} GiB / {:>5.2} GiB {} ({:>5.2} %)\n",
+        b_to_gib(swap_used),
         b_to_gib(sysinfo.swap_total()),
+        progress_bar(swap_used as usize, sysinfo.swap_total() as usize, 20),
         percent_swap_used
     );
 
@@ -39,6 +42,7 @@ pub fn from_sysinfo() -> Result<String, Error> {
     Ok(s)
 }
 
+#[test]
 fn bench_sysinfo3() {
     let s = from_sysinfo().unwrap();
     println!("{}", s);
