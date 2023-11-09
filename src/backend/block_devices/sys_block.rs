@@ -21,7 +21,8 @@
 use std::io::Error;
 use std::path::Path;
 
-use crate::backend::get_string_from_file;
+use crate::frontend::icons::{ICON_BR, ICON_DM, ICON_LOOP, ICON_SD, ICON_SR};
+use crate::get_string_from_file;
 
 /// `/sys/block`
 const SYS_BLOCK: &str = "/sys/block";
@@ -39,6 +40,14 @@ const DEVICE_VENDOR: &str = "device/vendor";
 const DM_NAME: &str = "dm/name";
 /// `/sys/block/<DEVICE>/loop/backing_file`
 const LOOP_BACKING_FILE: &str = "loop/backing_file";
+/// `/sys/block/<DEVICE>/partition
+const PARTITION: &str = "partition";
+/// `/sys/block/<DEVICE>/queue/rotational`
+const QUEUE_ROTATIONAL: &str = "queue/rotational";
+/// `/sys/block/<DEVICE>/ro`
+const RO: &str = "ro";
+/// `/sys/block/<DEVICE>/dev`
+const DEV: &str = "dev";
 
 const BLOCK_SIZE_DEFAULT: usize = 512;
 
@@ -55,9 +64,21 @@ impl BlockDevicesInfo {
         // list files in `/sys/block/*`, parse as block devices and save
         if let Ok(dir) = std::fs::read_dir(SYS_BLOCK) {
             for entry in dir.flatten() {
-                let path = entry.path();
-                let device = BlockDeviceInfo::get(path)?;
+                let path = entry.path().clone();
+                let device = BlockDeviceInfo::get(&path)?;
+                let name = device.name.clone();
                 block_info.devices.push(device);
+
+                // let children = format!("{}/{}/", SYS_BLOCK, &name);
+                if let Ok(dir) = std::fs::read_dir(&path) {
+                    for entry in dir.flatten() {
+                        if entry.file_name().to_string_lossy().starts_with(&name) {
+                            let path = entry.path();
+                            let device = BlockDeviceInfo::get(path)?;
+                            block_info.devices.push(device);
+                        }
+                    }
+                }
             }
         }
 
@@ -70,19 +91,45 @@ pub struct BlockDeviceInfo {
     // `name`
     pub name: String,
     // `model`
-    pub model: String,
+    pub model: Option<String>,
     // `dm_name`
-    pub dm_name: String,
+    pub dm_name: Option<String>,
     // `backing_file`
-    pub backing_file: String,
+    pub backing_file: Option<String>,
     // `vendor`
-    pub vendor: String,
+    pub vendor: Option<String>,
     // `removable`
     pub removable: bool,
     // `hidden`
     pub hidden: bool,
     // `size`
     pub size: u64,
+    // `partition`
+    // pub partition: Option<bool>,
+    // `rotational`
+    // pub rotational: Option<bool>,
+    // `ro`
+    // pub ro: Option<bool>,
+    // `dev`
+    pub dev: Option<String>,
+}
+
+pub fn bool_from_str(s: &str) -> Option<bool> {
+    match s {
+        "1" => Some(true),
+        "0" => Some(false),
+        _ => None,
+    }
+}
+
+pub fn option_bool_to_str(option: Option<bool>) -> String {
+    String::from(match option {
+        Some(f) => match f {
+            true => "1",
+            false => "0",
+        },
+        None => " ",
+    })
 }
 
 impl BlockDeviceInfo {
@@ -115,24 +162,34 @@ impl BlockDeviceInfo {
         }
 
         let f = path.join(DEVICE_MODEL);
-        if let Ok(model) = get_string_from_file(f) {
-            device.model = model;
-        }
+        device.model = get_string_from_file(f).ok();
 
         let f = path.join(DEVICE_VENDOR);
-        if let Ok(vendor) = get_string_from_file(f) {
-            device.vendor = vendor;
-        }
+        device.vendor = get_string_from_file(f).ok();
 
         let f = path.join(DM_NAME);
-        if let Ok(dm_name) = get_string_from_file(f) {
-            device.dm_name = dm_name;
-        }
+        device.dm_name = get_string_from_file(f).ok();
+
+        // let f = path.join(PARTITION);
+        // if let Ok(partition) = get_string_from_file(f) {
+        //     device.partition = bool_from_str(&partition);
+        // }
+
+        // let f = path.join(QUEUE_ROTATIONAL);
+        // if let Ok(rotational) = get_string_from_file(f) {
+        //     device.rotational = bool_from_str(&rotational);
+        // }
+
+        // let f = path.join(RO);
+        // if let Ok(ro) = get_string_from_file(f) {
+        //     device.ro = bool_from_str(&ro);
+        // }
+
+        let f = path.join(DEV);
+        device.dev = get_string_from_file(f).ok();
 
         let f = path.join(LOOP_BACKING_FILE);
-        if let Ok(backing_file) = get_string_from_file(f) {
-            device.backing_file = backing_file;
-        }
+        device.backing_file = get_string_from_file(f).ok();
 
         Ok(device)
     }
@@ -141,5 +198,70 @@ impl BlockDeviceInfo {
 #[test]
 fn get_block_info_test() {
     let bi = BlockDevicesInfo::get().unwrap();
-    dbg!(bi);
+    // dbg!(bi);
+    for device in bi.devices {
+        println!("{}", device.name);
+    }
+}
+
+#[test]
+fn get_block_info_size_test() {
+    use crate::b_to_gib;
+    use crate::Mounts2;
+    use crate::{percent, progress_bar};
+    use nix::sys::statvfs::statvfs;
+
+    let mut bi = BlockDevicesInfo::get().unwrap();
+    bi.devices.sort();
+    let mtab = Mounts2::get_from_mtab2().unwrap();
+    for device in bi.devices {
+        let path = if let Some(dm_name) = device.dm_name {
+            format!("/dev/mapper/{}", dm_name)
+        } else {
+            format!("/dev/{}", device.name)
+        };
+        let dev = device.dev.unwrap_or_default();
+        let icon = if device.name.starts_with("sd") {
+            ICON_SD
+        } else if device.name.starts_with("sr") {
+            ICON_SR
+        } else if device.name.starts_with("dm") {
+            ICON_DM
+        } else if device.name.starts_with("loop") {
+            ICON_LOOP
+        } else {
+            ICON_SD
+        };
+        if let Some(mount) = mtab.mounts.get(&path) {
+            let stat = statvfs(mount.mnt_dir.as_str()).unwrap();
+            let available = stat.block_size() * stat.blocks_available();
+            let total = stat.block_size() * stat.blocks();
+            let used = total - available;
+            let percent = percent(used as f64, total as f64);
+            println!(
+                "{} {:<25} {:<25} {:>5} {:>7.3} GiB / {:>7.3} GiB {} ({:>6.2} %)",
+                icon,
+                path,
+                mount.mnt_dir,
+                dev,
+                b_to_gib(used),
+                b_to_gib(total),
+                progress_bar(used as usize, total as usize, 20),
+                percent,
+            );
+        } else {
+            println!(
+                "{} {:<25} {:<25} {:>5}               {:>7.3} GiB",
+                icon,
+                path,
+                format!(
+                    "{} {}",
+                    device.vendor.unwrap_or_default(),
+                    device.model.unwrap_or_default()
+                ),
+                dev,
+                b_to_gib(device.size),
+            );
+        }
+    }
 }

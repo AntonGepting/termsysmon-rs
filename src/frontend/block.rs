@@ -9,6 +9,8 @@ pub fn from_sys_block() -> Result<String, Error> {
 
     for device in block_info.devices {
         let name = device.name;
+        let dm_name = device.dm_name.unwrap_or_default();
+        let backing_file = device.backing_file.unwrap_or_default();
         // hdd, ssd
         let icon = if name.starts_with("sd") {
             ICON_SD
@@ -29,9 +31,9 @@ pub fn from_sys_block() -> Result<String, Error> {
             " {} {:<20} {}{} \t {} {:<10.3} GiB\n",
             icon,
             name,
-            device.dm_name,
-            device.backing_file,
-            device.model,
+            dm_name,
+            backing_file,
+            device.model.unwrap_or_default(),
             b_to_gib(device.size)
         );
     }
