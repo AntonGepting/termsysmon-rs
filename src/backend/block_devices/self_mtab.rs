@@ -4,8 +4,8 @@ use std::io::Error;
 use std::str::FromStr;
 
 #[derive(Default, Debug)]
-pub struct Mounts2 {
-    pub mounts: BTreeMap<String, MountInfo2>,
+pub struct Mounts {
+    pub mounts: BTreeMap<String, MountInfo>,
 }
 
 // * 1. `/proc/self/mountinfo`
@@ -13,9 +13,9 @@ pub struct Mounts2 {
 // * 3. `/proc/mounts`
 //
 // children too search + rotation
-impl Mounts2 {
-    pub fn get_from_mtab2() -> Result<Self, Error> {
-        let mut mounts = Mounts2::default();
+impl Mounts {
+    pub fn get_from_mtab() -> Result<Self, Error> {
+        let mut mounts = Mounts::default();
 
         let buff = get_string_from_file("/etc/mtab")?;
 
@@ -33,7 +33,7 @@ impl Mounts2 {
 }
 
 #[derive(Default, Debug)]
-pub struct MountInfo2 {
+pub struct MountInfo {
     // name of mounted filesystem
     // pub mnt_fsname: String,
     // filesystem path prefix
@@ -48,9 +48,9 @@ pub struct MountInfo2 {
     pub mnt_passno: usize,
 }
 
-impl MountInfo2 {}
+impl MountInfo {}
 
-impl FromStr for MountInfo2 {
+impl FromStr for MountInfo {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -83,7 +83,7 @@ impl FromStr for MountInfo2 {
 
 #[test]
 fn bench_get_from_mtab2_test() {
-    let mounts = Mounts2::get_from_mtab2().unwrap();
+    let mounts = Mounts::get_from_mtab().unwrap();
     dbg!(&mounts);
     for (mnt_fsname, mount) in mounts.mounts {
         if mnt_fsname.starts_with("/dev/") {

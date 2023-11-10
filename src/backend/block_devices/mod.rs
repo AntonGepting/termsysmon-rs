@@ -1,4 +1,4 @@
-pub mod etc_mtab;
+// pub mod etc_mtab;
 // pub mod libc_mtab;
 // pub mod libc_statvfs;
 pub mod nix_statvfs;
@@ -7,7 +7,7 @@ pub mod proc_mountinfo;
 pub mod self_mtab;
 pub mod sys_block;
 
-pub use etc_mtab::*;
+// pub use etc_mtab::*;
 // pub use libc_mtab::*;
 // pub use libc_statvfs::*;
 pub use nix_statvfs::*;

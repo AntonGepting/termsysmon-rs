@@ -1,13 +1,13 @@
 /// Get info from sysfs
 /// ```text
 /// /sys/block/*/hidden
-/// /sys/block/*/size
-/// /sys/block/*/device/model
-/// /sys/block/*/device/vendor
-/// /sys/block/*/dm/name
-/// /sys/block/*/loop
-/// /sys/block/*/backing_file
-/// /sys/block/*/device/vpd_pg80
+///             /size
+///             /device/model
+///             /device/vendor
+///             /dm/name
+///             /loop
+///             /backing_file
+///             /device/vpd_pg80
 ///
 /// (loop|fd|md|dm-|sr|scd|st|sd|mmc|nvme|nbd|ram)[a-z0-9]
 ///
@@ -21,15 +21,14 @@
 use std::io::Error;
 use std::path::Path;
 
-use crate::frontend::icons::{ICON_BR, ICON_DM, ICON_LOOP, ICON_SD, ICON_SR};
 use crate::get_string_from_file;
 
 /// `/sys/block`
 const SYS_BLOCK: &str = "/sys/block";
 /// `/sys/block/<DEVICE>/removable`
-const REMOVABLE: &str = "removable";
+// const REMOVABLE: &str = "removable";
 /// `/sys/block/<DEVICE>/hidden`
-const HIDDEN: &str = "hidden";
+// const HIDDEN: &str = "hidden";
 /// `/sys/block/<DEVICE>/size`
 const SIZE: &str = "size";
 /// `/sys/block/<DEVICE>/device/model`
@@ -41,11 +40,11 @@ const DM_NAME: &str = "dm/name";
 /// `/sys/block/<DEVICE>/loop/backing_file`
 const LOOP_BACKING_FILE: &str = "loop/backing_file";
 /// `/sys/block/<DEVICE>/partition
-const PARTITION: &str = "partition";
+// const PARTITION: &str = "partition";
 /// `/sys/block/<DEVICE>/queue/rotational`
-const QUEUE_ROTATIONAL: &str = "queue/rotational";
+// const QUEUE_ROTATIONAL: &str = "queue/rotational";
 /// `/sys/block/<DEVICE>/ro`
-const RO: &str = "ro";
+// const RO: &str = "ro";
 /// `/sys/block/<DEVICE>/dev`
 const DEV: &str = "dev";
 
@@ -112,24 +111,6 @@ pub struct BlockDeviceInfo {
     // pub ro: Option<bool>,
     // `dev`
     pub dev: Option<String>,
-}
-
-pub fn bool_from_str(s: &str) -> Option<bool> {
-    match s {
-        "1" => Some(true),
-        "0" => Some(false),
-        _ => None,
-    }
-}
-
-pub fn option_bool_to_str(option: Option<bool>) -> String {
-    String::from(match option {
-        Some(f) => match f {
-            true => "1",
-            false => "0",
-        },
-        None => " ",
-    })
 }
 
 impl BlockDeviceInfo {
@@ -207,13 +188,14 @@ fn get_block_info_test() {
 #[test]
 fn get_block_info_size_test() {
     use crate::b_to_gib;
-    use crate::Mounts2;
+    use crate::frontend::icons::{ICON_DM, ICON_LOOP, ICON_SD, ICON_SR};
+    use crate::Mounts;
     use crate::{percent, progress_bar};
     use nix::sys::statvfs::statvfs;
 
     let mut bi = BlockDevicesInfo::get().unwrap();
     bi.devices.sort();
-    let mtab = Mounts2::get_from_mtab2().unwrap();
+    let mtab = Mounts::get_from_mtab().unwrap();
     for device in bi.devices {
         let path = if let Some(dm_name) = device.dm_name {
             format!("/dev/mapper/{}", dm_name)
@@ -232,6 +214,11 @@ fn get_block_info_size_test() {
         } else {
             ICON_SD
         };
+        let device_name = format!(
+            "{} {}",
+            device.vendor.unwrap_or_default(),
+            device.model.unwrap_or_default()
+        );
         if let Some(mount) = mtab.mounts.get(&path) {
             let stat = statvfs(mount.mnt_dir.as_str()).unwrap();
             let available = stat.block_size() * stat.blocks_available();
@@ -239,10 +226,12 @@ fn get_block_info_size_test() {
             let used = total - available;
             let percent = percent(used as f64, total as f64);
             println!(
-                "{} {:<25} {:<25} {:>5} {:>7.3} GiB / {:>7.3} GiB {} ({:>6.2} %)",
+                "{} {:<25} {:<25} {:<25} {:>9} {:>5} {:>7.3} GiB / {:>7.3} GiB {} ({:>6.2} %)",
                 icon,
                 path,
+                device_name,
                 mount.mnt_dir,
+                mount.mnt_type,
                 dev,
                 b_to_gib(used),
                 b_to_gib(total),
@@ -251,14 +240,10 @@ fn get_block_info_size_test() {
             );
         } else {
             println!(
-                "{} {:<25} {:<25} {:>5}               {:>7.3} GiB",
+                "{} {:<25} {:<25}                                     {:>5}               {:>7.3} GiB",
                 icon,
                 path,
-                format!(
-                    "{} {}",
-                    device.vendor.unwrap_or_default(),
-                    device.model.unwrap_or_default()
-                ),
+                device_name,
                 dev,
                 b_to_gib(device.size),
             );
