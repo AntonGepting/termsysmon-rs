@@ -99,9 +99,9 @@ pub struct BlockDeviceInfo {
     // `vendor`
     pub vendor: Option<String>,
     // `removable`
-    pub removable: bool,
+    // pub removable: Option<bool>,
     // `hidden`
-    pub hidden: bool,
+    // pub hidden: Option<bool>,
     // `size`
     pub size: u64,
     // `partition`
@@ -146,15 +146,15 @@ impl BlockDeviceInfo {
             .unwrap_or_default()
             .to_owned();
 
-        let f = path.join(REMOVABLE);
-        if let Ok(removable) = get_string_from_file(f) {
-            device.removable = if removable == "1" { true } else { false };
-        }
+        // let f = path.join(REMOVABLE);
+        // if let Ok(removable) = get_string_from_file(f) {
+        //     device.removable = bool_from_str(&removable);
+        // }
 
-        let f = path.join(HIDDEN);
-        if let Ok(hidden) = get_string_from_file(f) {
-            device.hidden = if hidden == "1" { true } else { false };
-        }
+        // let f = path.join(HIDDEN);
+        // if let Ok(hidden) = get_string_from_file(f) {
+        //     device.hidden = bool_from_str(&hidden);
+        // }
 
         let f = path.join(SIZE);
         if let Ok(size) = get_string_from_file(f) {

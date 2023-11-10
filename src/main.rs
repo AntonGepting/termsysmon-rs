@@ -33,15 +33,6 @@ const L_DISKS: &str =
 const L_NETWORK: &str =
     "─ Network ──────────────────────────────────────────────────────────────────────";
 
-// into float GiB (n / 1024^3)
-pub fn to_gib(n: u64) -> f64 {
-    n as f64 / (usize::pow(1024, 3) as f64)
-}
-
-// into float GHz (n / 1000.0)
-pub fn to_ghz(n: u64) -> f64 {
-    n as f64 / 1000.0
-}
 // NOTE: group of `println!()` calls produces flickering, changed to string building and print
 fn build_page(sys: &System) -> String {
     let mut s = String::new();
@@ -77,7 +68,7 @@ fn build_page(sys: &System) -> String {
         " CPU: {} (Cores: {}) ({} GHz)\n",
         sys.global_cpu_info().brand(),
         sys.physical_core_count().unwrap_or(0),
-        to_ghz(sys.global_cpu_info().frequency())
+        mhz_to_ghz(sys.global_cpu_info().frequency() as usize)
     );
 
     for (i, cpu) in sys.cpus().iter().enumerate() {
@@ -85,7 +76,7 @@ fn build_page(sys: &System) -> String {
             "  Core {}: {} ({:.3} GHz) ({:.2} %)\n",
             i,
             cpu.name(),
-            to_ghz(cpu.frequency()),
+            mhz_to_ghz(cpu.frequency() as usize),
             cpu.cpu_usage()
         );
     }
@@ -93,17 +84,17 @@ fn build_page(sys: &System) -> String {
     s += &format!("{}\n", L_MEM);
     s += &format!(
         "  RAM  \t {:<5.2} GiB \t {:<5.2} GiB \t {:<5.2} GiB \t {:<5.2} GiB\n",
-        to_gib(sys.free_memory()),
-        to_gib(sys.used_memory()),
-        to_gib(sys.available_memory()),
-        to_gib(sys.total_memory()),
+        b_to_gib(sys.free_memory()),
+        b_to_gib(sys.used_memory()),
+        b_to_gib(sys.available_memory()),
+        b_to_gib(sys.total_memory()),
     );
 
     s += &format!(
         "  Swap \t {:<5.2} GiB \t {:<5.2} GiB \t {:<5.2} GiB\n",
-        to_gib(sys.free_swap()),
-        to_gib(sys.used_swap()),
-        to_gib(sys.total_swap()),
+        b_to_gib(sys.free_swap()),
+        b_to_gib(sys.used_swap()),
+        b_to_gib(sys.total_swap()),
     );
 
     s += &format!("{}\n", L_DISKS);
@@ -114,8 +105,8 @@ fn build_page(sys: &System) -> String {
             disk.name().to_string_lossy(),
             str::from_utf8(disk.file_system()).unwrap_or(""),
             disk.mount_point().to_string_lossy(),
-            to_gib(disk.available_space()),
-            to_gib(disk.total_space()),
+            b_to_gib(disk.available_space()),
+            b_to_gib(disk.total_space()),
             disk.is_removable()
         );
     }
@@ -182,7 +173,7 @@ fn update2() {
     // strings updated every ... seconds
     s += &once;
     s += &from_proc_meminfo().unwrap();
-    s += &from_sys_class_net().unwrap();
+    // s += &from_sys_class_net().unwrap();
     s += &from_sys_block().unwrap();
 
     print!("{}", s);

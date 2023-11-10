@@ -5,12 +5,28 @@ use crate::{ICON_BR, ICON_DOCKER, ICON_ETH, ICON_LO, ICON_VETH, ICON_WIFI};
 
 use nix::{ifaddrs::getifaddrs, sys::socket::SockaddrStorage};
 
-// INFO: hashmap and not Vec<struct {name, mac, ipv4, ipv6}> bc. from libc
+use std::ops::{Deref, DerefMut};
+
 // interfaces are received by name - addresses list, not name - addresses tree
 #[derive(Default, Debug)]
 pub struct Interfaces {
     pub interfaces: BTreeMap<String, Interface>,
 }
+
+impl Deref for Interfaces {
+    type Target = BTreeMap<String, Interface>;
+    fn deref(&self) -> &BTreeMap<String, Interface> {
+        &self.interfaces
+    }
+}
+
+impl DerefMut for Interfaces {
+    fn deref_mut(&mut self) -> &mut BTreeMap<String, Interface> {
+        &mut self.interfaces
+    }
+}
+
+// INFO: hashmap and not Vec<struct {name, mac, ipv4, ipv6}> bc. from libc
 
 #[derive(Default, Debug)]
 pub struct Interface {
@@ -57,12 +73,12 @@ impl Interfaces {
             if let Some(address) = ifaddr.address {
                 let name = ifaddr.interface_name;
                 // get by name or save a new one by name, and set fields
-                match interfaces.interfaces.get_mut(&name) {
+                match interfaces.get_mut(&name) {
                     Some(interface) => interface.from_sockaddr_storage(&address),
                     None => {
                         let mut interface = Interface::default();
                         interface.from_sockaddr_storage(&address);
-                        interfaces.interfaces.insert(name, interface);
+                        interfaces.insert(name, interface);
                     }
                 }
             }
@@ -73,7 +89,7 @@ impl Interfaces {
 }
 
 pub fn convert_to_string(interfaces: Interfaces) {
-    for (name, interface) in interfaces.interfaces {
+    for (name, interface) in interfaces.iter() {
         let icon = if name.starts_with("w") {
             ICON_WIFI
         } else if name.starts_with("br-") {
