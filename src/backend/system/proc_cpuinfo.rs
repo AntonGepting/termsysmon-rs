@@ -7,6 +7,8 @@ use std::fs::read_to_string;
 use std::io::Error;
 use std::str::FromStr;
 
+use crate::frontend::{human_mhz, progress_bar};
+
 #[derive(Debug, Default)]
 pub struct CpusInfo {
     pub cpus: Vec<CpuInfo>,
@@ -87,72 +89,21 @@ impl FromStr for CpusInfo {
     }
 }
 
-pub fn from_proc_cpuinfo() -> Result<String, Error> {
+pub fn from_proc_cpuinfo(p: &Vec<f64>) -> Result<String, Error> {
     let mut s = String::new();
 
     let cpus = get_cpuinfo()?;
 
-    for cpu in cpus.cpus {
+    for (i, cpu) in cpus.cpus.iter().enumerate() {
         s += &format!(
-            "CPU #{} {} {} MHz\n",
-            cpu.processor, cpu.model_name, cpu.cpu_mhz
+            "  CPU #{:<3} {:<50}                                          {} {} ({:>6.2} %)\n",
+            cpu.processor,
+            cpu.model_name,
+            human_mhz(cpu.cpu_mhz),
+            progress_bar(p[i + 1] as u64, 100, 20),
+            p[i + 1]
         );
     }
 
-    get_proc_stat().unwrap();
-
     Ok(s)
-}
-
-const PROC_STAT: &str = "/proc/stat";
-
-// `cpu  570820 2730 291925 11725884 37373 0 6446 0 0 0`
-#[derive(Default, Debug)]
-pub struct CpuStat {
-    pub name: String,
-    pub user: usize,
-    pub nice: usize,
-    pub system: usize,
-    pub idle: usize,
-    pub iowait: usize,
-    pub irq: usize,
-    pub softirq: usize,
-    pub steal: usize,
-    pub guest: usize,
-    pub guest_nice: usize,
-}
-
-pub fn get_proc_stat() -> Result<CpuStat, Error> {
-    let buf = read_to_string(PROC_STAT)?;
-    buf.parse()
-}
-
-impl FromStr for CpuStat {
-    type Err = Error;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut cpu = CpuStat::default();
-        for line in s.lines() {
-            if line.starts_with("cpu") {
-                // NOTE: first cpu has double spaces after `cpu` keyword
-                let mut parts = line.split_whitespace();
-
-                cpu.name = parts.next().unwrap_or_default().to_string();
-                cpu.user = parts.next().unwrap_or_default().parse().unwrap_or_default();
-                cpu.nice = parts.next().unwrap_or_default().parse().unwrap_or_default();
-                cpu.system = parts.next().unwrap_or_default().parse().unwrap_or_default();
-                cpu.idle = parts.next().unwrap_or_default().parse().unwrap_or_default();
-                cpu.iowait = parts.next().unwrap_or_default().parse().unwrap_or_default();
-                cpu.irq = parts.next().unwrap_or_default().parse().unwrap_or_default();
-                cpu.softirq = parts.next().unwrap_or_default().parse().unwrap_or_default();
-                cpu.steal = parts.next().unwrap_or_default().parse().unwrap_or_default();
-                cpu.guest = parts.next().unwrap_or_default().parse().unwrap_or_default();
-                cpu.guest_nice = parts.next().unwrap_or_default().parse().unwrap_or_default();
-
-                dbg!(&cpu);
-            }
-        }
-
-        Ok(cpu)
-    }
 }

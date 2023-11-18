@@ -1,35 +1,30 @@
+use nix::{ifaddrs::getifaddrs, sys::socket::SockaddrStorage};
 use std::collections::BTreeMap;
 use std::io::Error;
-
-use crate::{ICON_BR, ICON_DOCKER, ICON_ETH, ICON_LO, ICON_VETH, ICON_WIFI};
-
-use nix::{ifaddrs::getifaddrs, sys::socket::SockaddrStorage};
-
 use std::ops::{Deref, DerefMut};
 
 // interfaces are received by name - addresses list, not name - addresses tree
 #[derive(Default, Debug)]
-pub struct Interfaces {
-    pub interfaces: BTreeMap<String, Interface>,
+pub struct NetInterfaces {
+    pub interfaces: BTreeMap<String, NetInterface>,
 }
 
-impl Deref for Interfaces {
-    type Target = BTreeMap<String, Interface>;
-    fn deref(&self) -> &BTreeMap<String, Interface> {
+impl Deref for NetInterfaces {
+    type Target = BTreeMap<String, NetInterface>;
+    fn deref(&self) -> &BTreeMap<String, NetInterface> {
         &self.interfaces
     }
 }
 
-impl DerefMut for Interfaces {
-    fn deref_mut(&mut self) -> &mut BTreeMap<String, Interface> {
+impl DerefMut for NetInterfaces {
+    fn deref_mut(&mut self) -> &mut BTreeMap<String, NetInterface> {
         &mut self.interfaces
     }
 }
 
 // INFO: hashmap and not Vec<struct {name, mac, ipv4, ipv6}> bc. from libc
-
 #[derive(Default, Debug)]
-pub struct Interface {
+pub struct NetInterface {
     pub mac: String,
     pub ipv4: String,
     pub ipv6: String,
@@ -43,7 +38,7 @@ pub const AF_INET6: u16 = 10;
 pub const AF_PACKET: u16 = 17;
 
 // TODO: custom to_string for addr, no need to store port (IPv4:0 or [IPv6]:0)
-impl Interface {
+impl NetInterface {
     pub fn from_sockaddr_storage(&mut self, address: &SockaddrStorage) {
         if let Some(sockaddrin) = address.as_sockaddr_in() {
             if sockaddrin.as_ref().sin_family == AF_INET {
@@ -63,9 +58,12 @@ impl Interface {
     }
 }
 
-impl Interfaces {
+impl NetInterfaces {
+    // NOTE: to_string():
+    //  0.0.0.0 ip wildcard, all interfaces
+    //  :0 wildcard, suitable port
     pub fn get() -> Result<Self, Error> {
-        let mut interfaces = Interfaces::default();
+        let mut interfaces = NetInterfaces::default();
 
         let ifaddrs = getifaddrs().unwrap();
         for ifaddr in ifaddrs {
@@ -76,7 +74,7 @@ impl Interfaces {
                 match interfaces.get_mut(&name) {
                     Some(interface) => interface.from_sockaddr_storage(&address),
                     None => {
-                        let mut interface = Interface::default();
+                        let mut interface = NetInterface::default();
                         interface.from_sockaddr_storage(&address);
                         interfaces.insert(name, interface);
                     }
@@ -88,34 +86,8 @@ impl Interfaces {
     }
 }
 
-pub fn convert_to_string(interfaces: Interfaces) {
-    for (name, interface) in interfaces.iter() {
-        let icon = if name.starts_with("w") {
-            ICON_WIFI
-        } else if name.starts_with("br-") {
-            ICON_BR
-        } else if name.starts_with("e") {
-            ICON_ETH
-        } else if name.starts_with("ve") {
-            ICON_VETH
-        } else if name.starts_with("lo") {
-            ICON_LO
-        } else if name.starts_with("docker") {
-            ICON_DOCKER
-        } else {
-            ICON_ETH
-        };
-
-        println!(
-            "{} {:<16} {:<18} {:<17} {}",
-            icon, name, interface.mac, interface.ipv4, interface.ipv6
-        );
-    }
-}
-
-// 0.0.0.0 ip wildcard, all interfaces, port 0 wildcard, suitable port
 #[test]
 fn test_ppp() {
-    let mut interfaces = Interfaces::get().unwrap();
-    convert_to_string(interfaces);
+    let interfaces = NetInterfaces::get().unwrap();
+    dbg!(interfaces);
 }

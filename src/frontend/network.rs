@@ -1,18 +1,42 @@
-use crate::{NetworkInfo, ICON_BR, ICON_DOCKER, ICON_ETH, ICON_LO, ICON_VETH, ICON_WIFI};
+use crate::{
+    NetInterfaces, ProcNetDevs, ICON_BR, ICON_DOCKER, ICON_ETH, ICON_LO, ICON_VETH, ICON_WIFI,
+};
 use std::io::Error;
 
-pub fn from_sys_class_net() -> Result<String, Error> {
+use super::human_b;
+
+//
+// [info](https://developers.redhat.com/blog/2018/10/22/introduction-to-linux-interfaces-for-virtual-networking#bridge)
+// * br
+// * tap
+// * eth
+// * veth
+// * bond
+// * team
+// * vx
+// * macvlan
+// * ipvl
+// * mactap
+// * macsec
+// * vcan
+// * vxcan
+// * ipoib
+// * nlmon
+// * dummy
+// * ifb
+// * sim
+pub fn from_sys_class_net(perf: &ProcNetDevs, dt: u64) -> Result<String, Error> {
     let mut s = String::new();
 
-    let net_info = NetworkInfo::get().unwrap();
+    let interfaces = NetInterfaces::get().unwrap();
 
     // br-77772d444cbb
-    for iface in net_info.interfaces {
-        // s += &format!("{:<20} \t {}\n", iface.name, iface.mac_address);
-        let name = iface.name;
-        let icon = if name.starts_with("w") {
+    for (name, interface) in interfaces.iter() {
+        let icon = if name.starts_with("wlp") {
             ICON_WIFI
-        } else if name.starts_with("br-") {
+        } else if name.starts_with("wlx") {
+            ICON_WIFI
+        } else if name.starts_with("br") {
             ICON_BR
         } else if name.starts_with("e") {
             ICON_ETH
@@ -25,7 +49,23 @@ pub fn from_sys_class_net() -> Result<String, Error> {
         } else {
             ICON_ETH
         };
-        s += &format!(" {} {:<20} \t {}\n", icon, name, iface.mac_address);
+
+        let stats = perf.get(name).unwrap();
+
+        let dt = dt / 1000;
+        let rx = stats.rx_bytes / dt;
+        let tx = stats.tx_bytes / dt;
+
+        s += &format!(
+            " {} {:<15}  {:>17}  {:>17}  {:>35}                      rx: {}/s tx: {}/s\n",
+            icon,
+            name,
+            interface.mac,
+            interface.ipv4,
+            interface.ipv6,
+            human_b(rx as f64),
+            human_b(tx as f64)
+        );
     }
 
     Ok(s)

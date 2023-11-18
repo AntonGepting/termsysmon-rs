@@ -18,20 +18,20 @@ const PROC_MEMINFO: &str = "/proc/meminfo";
 #[derive(Debug, PartialEq, Default)]
 pub struct MemInfo {
     /// `MemTotal` (kB)
-    pub mem_total: usize,
+    pub mem_total: u64,
     /// `MemFree` physical RAM, left unused by the system (kB)
-    pub mem_free: usize,
+    pub mem_free: u64,
     /// `MemAvailable` memory available for starting new applications, without swapping (kB)
-    pub mem_available: usize,
+    pub mem_available: u64,
     /// `SwapTotal` (kB)
-    pub swap_total: usize,
+    pub swap_total: u64,
     /// `SwapFree` (kB)
-    pub swap_free: usize,
+    pub swap_free: u64,
 }
 
 /// parse str value into usize
 /// (e.g. `MemTotal: 123456 kB` -> `123456`)
-fn parse_meminfo_usize_value(line: &str) -> usize {
+fn parse_meminfo_usize_value(line: &str) -> u64 {
     line.splitn(2, ':')
         .nth(1)
         .map(|x| x.trim())

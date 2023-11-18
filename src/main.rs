@@ -162,24 +162,48 @@ fn update2() {
     // strings produced once on start
     let mut once = String::new();
     once += &from_sys_class_dmi().unwrap();
-    once += &from_proc_cpuinfo().unwrap();
+
+    let mut start = CpuStats::get().unwrap();
+    let mut net_start = ProcNetDevs::get().unwrap();
+    let dt = 3000;
 
     // update
-    // loop {
-    let mut s = String::new();
-    // update output on screen begin, instead of concatenation
-    print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
+    loop {
+        let mut s = String::new();
+        // update output on screen begin, instead of concatenation
+        print!("{esc}[?1049h", esc = 27 as char);
+        print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
 
-    // strings updated every ... seconds
-    s += &once;
-    s += &from_proc_meminfo().unwrap();
-    // s += &from_sys_class_net().unwrap();
-    s += &from_sys_block().unwrap();
+        // print!("^[[2J");
+        // print!("^[[;H");
+        // print!("\\e[H");
 
-    print!("{}", s);
+        let end = CpuStats::get().unwrap();
+        let p = end.get_performance(&start);
 
-    // sleep(Duration::from_millis(1000));
-    // }
+        let mut net_curr = ProcNetDevs::get().unwrap();
+        let net_perf = net_curr.diff(&net_start);
+
+        // strings updated every ... seconds
+        s += &format!("{}\n", L_SYSTEM);
+        s += &once;
+        s += &format!("{}\n", L_CPU);
+        s += &from_proc_cpuinfo(&p).unwrap();
+        s += &format!("{}\n", L_MEM);
+        s += &from_proc_meminfo().unwrap();
+        s += &format!("{}\n", L_DISKS);
+        s += &from_sys_block().unwrap();
+        s += &format!("{}\n", L_NETWORK);
+        s += &from_sys_class_net(&net_perf, dt).unwrap();
+
+        print!("{}", s);
+        print!("{esc}[1049l", esc = 27 as char);
+
+        start = CpuStats::get().unwrap();
+        net_start = ProcNetDevs::get().unwrap();
+
+        sleep(Duration::from_millis(dt));
+    }
 }
 
 #[test]

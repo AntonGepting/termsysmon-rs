@@ -9,7 +9,7 @@
 /// ```
 use std::io::Error;
 
-use crate::backend::get_string_from_file;
+use crate::{get_string_from_file, ICON_BIOS, ICON_MOTHERBOARD};
 
 const SYS_CLASS_DMI: &str = "/sys/class/dmi/id/";
 const BIOS_VERSION: &str = "bios_version";
@@ -55,13 +55,14 @@ pub fn from_sys_class_dmi() -> Result<String, Error> {
     let mut s = String::new();
 
     let dmi_info = get_dmi_info()?;
-
-    s += &format!("BIOS Vendor: {}\n", dmi_info.bios_vendor);
-    s += &format!("BIOS Version: {}\n", dmi_info.bios_version);
-    s += &format!("BIOS Date: {}\n", dmi_info.bios_date);
-    s += &format!("Board Name: {}\n", dmi_info.board_name);
-    s += &format!("Board Vendor: {}\n", dmi_info.board_vendor);
-    s += &format!("Board Version: {}\n", dmi_info.board_version);
+    s += &format!(
+        " {} Board: {} {} {}\n",
+        ICON_MOTHERBOARD, dmi_info.board_name, dmi_info.board_vendor, dmi_info.board_version
+    );
+    s += &format!(
+        " {} BIOS: {} {} {}\n",
+        ICON_BIOS, dmi_info.bios_vendor, dmi_info.bios_version, dmi_info.bios_date
+    );
 
     Ok(s)
 }

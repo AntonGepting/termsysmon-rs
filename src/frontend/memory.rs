@@ -1,7 +1,7 @@
 use crate::procfs::{Meminfo, ProcError};
 use crate::{kib_to_gib, percent, MemInfo, ICON_RAM, ICON_SWAP};
 
-use super::progress_bar;
+use super::{human_b, progress_bar};
 
 pub fn from_proc_meminfo() -> Result<String, ProcError> {
     let mut s = String::new();
@@ -18,10 +18,10 @@ pub fn from_proc_meminfo() -> Result<String, ProcError> {
 
     // show free, total, percent used mem
     s += &format!(
-        " {} RAM:  {:.2} GiB / {:.2} GiB {} ({:.2} %)\n",
+        " {} RAM                                                                                     {} / {} {} ({:>6.2} %)\n",
         ICON_RAM,
-        kib_to_gib(mem_used as f64),
-        kib_to_gib(meminfo.mem_total as f64),
+        human_b(mem_used as f64 * 1000.0),
+        human_b(meminfo.mem_total as f64 * 1000.0),
         progress_bar(mem_used, meminfo.mem_total, 20),
         percent_mem_used
     );
@@ -32,10 +32,10 @@ pub fn from_proc_meminfo() -> Result<String, ProcError> {
 
     // show free, total, percent used swap
     s += &format!(
-        " {} Swap: {:.2} GiB / {:.2} GiB {} ({:.2} %)\n",
+        " {} Swap                                                                                    {} / {} {} ({:>6.2} %)\n",
         ICON_SWAP,
-        kib_to_gib(swap_used as f64),
-        kib_to_gib(meminfo.swap_total as f64),
+        human_b(swap_used as f64 * 1000.0),
+        human_b(meminfo.swap_total as f64 * 1000.0),
         progress_bar(swap_used, meminfo.swap_total, 20),
         percent_swap_used
     );

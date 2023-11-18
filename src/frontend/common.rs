@@ -37,11 +37,53 @@ pub fn bench(cb: &dyn Fn(), n: Option<u128>) {
     println!("Avg. exec time: {} ms ({} iterations)", t_avg, n);
 }
 
+pub fn human_b(mut value: f64) -> String {
+    let units = ["B", "KiB", "MiB", "GiB", "TiB"];
+    human_units_ext(value, &units)
+}
+
+pub fn human_mhz(mut value: f64) -> String {
+    let units = ["MHz", "GHz"];
+    human_units_ext(value, &units)
+}
+
+pub fn human_units_ext(mut value: f64, units: &[&str]) -> String {
+    // pub fn human_b_per_s(mut value: u64) -> String {
+    const THOUSAND: f64 = 1024.0;
+    // const THOUSAND: u64 = 1024;
+
+    let mut i = 0;
+    let mut unit = units[i];
+
+    while (value > THOUSAND) && (i < units.len()) {
+        i += 1;
+        value = value / THOUSAND;
+        // value = value / THOUSAND;
+        unit = units[i];
+        dbg!(&value, &unit);
+    }
+    format!("{:>6.1} {:>3}", value, unit)
+}
+
+#[test]
+fn human_b_convert_test() {
+    let s = human_b(2097151.0 * 512.0);
+    dbg!(s);
+    let s = human_b(1025.0);
+    dbg!(s);
+    let s = human_b(900001025.0);
+    dbg!(s);
+    let s = human_b(1001025.0);
+    dbg!(s);
+    let s = human_b(25.0);
+    dbg!(s);
+}
+
 // print progress bar string
 // x - current value
 // total - 100 % value
 // pub fn progress_bar(x: f64, total: f64, length: u64) -> String {
-pub fn progress_bar(x: usize, total: usize, length: usize) -> String {
+pub fn progress_bar(x: u64, total: u64, length: u64) -> String {
     let mut s = String::new();
 
     // let n = (length as f64 * x / total).ceil() as u64;

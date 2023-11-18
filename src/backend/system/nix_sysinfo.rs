@@ -17,7 +17,7 @@ pub fn from_sysinfo() -> Result<String, Error> {
         "  RAM  {:>5.2} GiB / {:>5.2} GiB {} ({:>5.2} %)\n",
         b_to_gib(ram_used),
         b_to_gib(sysinfo.ram_total()),
-        progress_bar(ram_used as usize, sysinfo.ram_total() as usize, 20),
+        progress_bar(ram_used, sysinfo.ram_total(), 20),
         percent_mem_used
     );
 
@@ -30,7 +30,7 @@ pub fn from_sysinfo() -> Result<String, Error> {
         "  Swap {:>5.2} GiB / {:>5.2} GiB {} ({:>5.2} %)\n",
         b_to_gib(swap_used),
         b_to_gib(sysinfo.swap_total()),
-        progress_bar(swap_used as usize, sysinfo.swap_total() as usize, 20),
+        progress_bar(swap_used, sysinfo.swap_total(), 20),
         percent_swap_used
     );
 

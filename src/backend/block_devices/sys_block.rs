@@ -198,9 +198,9 @@ fn get_block_info_size_test() {
     let mtab = Mounts::get_from_mtab().unwrap();
     for device in bi.devices {
         let path = if let Some(dm_name) = device.dm_name {
-            format!("/dev/mapper/{}", dm_name)
+            format!("{}", dm_name)
         } else {
-            format!("/dev/{}", device.name)
+            format!("{}", device.name)
         };
         let dev = device.dev.unwrap_or_default();
         let icon = if device.name.starts_with("sd") {
@@ -226,7 +226,7 @@ fn get_block_info_size_test() {
             let used = total - available;
             let percent = percent(used as f64, total as f64);
             println!(
-                "{} {:<25} {:<25} {:<25} {:>9} {:>5} {:>7.3} GiB / {:>7.3} GiB {} ({:>6.2} %)",
+                "{} {:<25} {:<25} {:<25} {:>9} {:>5} {:>7.3} / {:>7.3} GiB {} ({:>6.2} %)",
                 icon,
                 path,
                 device_name,
@@ -235,7 +235,7 @@ fn get_block_info_size_test() {
                 dev,
                 b_to_gib(used),
                 b_to_gib(total),
-                progress_bar(used as usize, total as usize, 20),
+                progress_bar(used, total, 20),
                 percent,
             );
         } else {
