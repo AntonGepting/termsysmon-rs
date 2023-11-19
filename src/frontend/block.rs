@@ -10,7 +10,6 @@ pub fn from_sys_block() -> Result<String, Error> {
 
     let mut bi = BlockDevicesInfo::get().unwrap();
     bi.devices.sort();
-    dbg!(&bi);
     let mtab = Mounts::get_from_mtab().unwrap();
     for device in bi.devices {
         let path = if let Some(dm_name) = device.dm_name {
@@ -59,7 +58,6 @@ pub fn from_sys_block() -> Result<String, Error> {
                 percent,
             );
         } else {
-            dbg!(&device.size);
             s += &format!(
                 " {} {:<25} {:<25}                                                  {}\n",
                 icon,

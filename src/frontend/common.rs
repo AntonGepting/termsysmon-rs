@@ -60,7 +60,6 @@ pub fn human_units_ext(mut value: f64, units: &[&str]) -> String {
         value = value / THOUSAND;
         // value = value / THOUSAND;
         unit = units[i];
-        dbg!(&value, &unit);
     }
     format!("{:>6.1} {:>3}", value, unit)
 }
