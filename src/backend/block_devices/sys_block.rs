@@ -18,10 +18,10 @@
 ///
 /// statvfs
 /// ```
-use std::io::Error;
+use std::io::{Error, ErrorKind};
 use std::path::Path;
 
-use crate::get_string_from_file;
+use crate::{get_string_from_file, get_string_from_path};
 
 /// `/sys/block`
 const SYS_BLOCK: &str = "/sys/block";
@@ -50,17 +50,18 @@ const DEV: &str = "dev";
 
 const BLOCK_SIZE_DEFAULT: usize = 512;
 
+// TODO: tree like lsblk
 #[derive(Debug, PartialEq, Eq, Ord, PartialOrd, Default)]
 pub struct BlockDevicesInfo {
     pub devices: Vec<BlockDeviceInfo>,
 }
 
 impl BlockDevicesInfo {
-    // parse directory structure into interfaces structure
+    // parse `/sys/block/*` directory structure into devices structure
     pub fn get() -> Result<Self, Error> {
         let mut block_info = BlockDevicesInfo::default();
 
-        // list files in `/sys/block/*`, parse as block devices and save
+        // list files in `/sys/block/*`, parse as block devices and save (e.g. sda, sdb, ...)
         if let Ok(dir) = std::fs::read_dir(SYS_BLOCK) {
             for entry in dir.flatten() {
                 let path = entry.path().clone();
@@ -69,6 +70,7 @@ impl BlockDevicesInfo {
                 block_info.devices.push(device);
 
                 // let children = format!("{}/{}/", SYS_BLOCK, &name);
+                // list children partitions (e.g. sda1, sda2 ...)
                 if let Ok(dir) = std::fs::read_dir(&path) {
                     for entry in dir.flatten() {
                         if entry.file_name().to_string_lossy().starts_with(&name) {
@@ -120,6 +122,7 @@ impl BlockDeviceInfo {
 
         let path = path.as_ref();
 
+        // get file name only
         device.name = path
             .file_name()
             .unwrap_or_default()
@@ -137,19 +140,18 @@ impl BlockDeviceInfo {
         //     device.hidden = bool_from_str(&hidden);
         // }
 
+        // `/sys/block/*/size`
         let f = path.join(SIZE);
         if let Ok(size) = get_string_from_file(f) {
             device.size = (size.parse().unwrap_or(0) * BLOCK_SIZE_DEFAULT) as u64;
         }
 
-        let f = path.join(DEVICE_MODEL);
-        device.model = get_string_from_file(f).ok();
-
-        let f = path.join(DEVICE_VENDOR);
-        device.vendor = get_string_from_file(f).ok();
-
-        let f = path.join(DM_NAME);
-        device.dm_name = get_string_from_file(f).ok();
+        // `/sys/block/*/device/model`
+        device.model = get_string_from_path(path, DEVICE_MODEL);
+        // `/sys/block/*/device/vendor`
+        device.vendor = get_string_from_path(path, DEVICE_VENDOR);
+        // `/sys/block/*/dm/name`
+        device.dm_name = get_string_from_path(path, DM_NAME);
 
         // let f = path.join(PARTITION);
         // if let Ok(partition) = get_string_from_file(f) {
@@ -166,14 +168,99 @@ impl BlockDeviceInfo {
         //     device.ro = bool_from_str(&ro);
         // }
 
-        let f = path.join(DEV);
-        device.dev = get_string_from_file(f).ok();
+        // `/sys/block/*/dev`
+        device.dev = get_string_from_path(path, DEV);
 
-        let f = path.join(LOOP_BACKING_FILE);
-        device.backing_file = get_string_from_file(f).ok();
+        // `/sys/block/*/loop/backing_file`
+        device.backing_file = get_string_from_path(path, LOOP_BACKING_FILE);
+
+        // `/sys/block/sda/sda*/holders/*/holders`
+        // `/sys/block/sda/sda*/slaves/*/slaves`
 
         Ok(device)
     }
+}
+
+// INFO: [kernel.org](https://www.kernel.org/doc/html/latest/block/stat.html )
+#[derive(Debug, PartialEq, Eq, Ord, PartialOrd, Default)]
+pub struct BlockDeviceStats {
+    // read I/Os requests number of read I/Os processed
+    pub read_ios: u64,
+    // read merges requests number of read I/Os merged with in-queue I/O
+    pub read_merges: u64,
+    // read sectors sectors number of sectors read
+    pub read_sectors: u64,
+    // read ticks milliseconds total wait time for read requests
+    pub read_ticks: u64,
+    // write I/Os requests number of write I/Os processed
+    pub write_ios: u64,
+    // write merges requests number of write I/Os merged with in-queue I/O
+    pub write_merges: u64,
+    // write sectors sectors number of sectors written
+    pub write_sectors: u64,
+    // write ticks milliseconds total wait time for write requests
+    pub write_ticks: u64,
+    // in_flight requests number of I/Os currently in flight
+    pub in_flight: u64,
+    // io_ticks milliseconds total time this block device has been active
+    pub io_ticks: u64,
+    // time_in_queue milliseconds total wait time for all requests
+    pub time_in_queue: u64,
+    // discard I/Os requests number of discard I/Os processed
+    pub discard_ios: u64,
+    // discard merges requests number of discard I/Os merged with in-queue I/O
+    pub discard_merges: u64,
+    // discard sectors sectors number of sectors discarded
+    pub discard_sectors: u64,
+    // discard ticks milliseconds total wait time for discard requests
+    pub discard_ticks: u64,
+    // flush I/Os requests number of flush I/Os processed
+    pub flush_ios: u64,
+    // flush ticks milliseconds total wait time for flush requests
+    pub flush_ticks: u64,
+}
+
+impl BlockDeviceStats {
+    // get stats struct by given stat file path
+    pub fn get(block_device: &str) -> Result<Self, Error> {
+        let buff = get_string_from_file(block_device)?;
+
+        let v: Vec<u64> = buff
+            .split_whitespace()
+            .filter_map(|s| s.parse().ok())
+            .collect();
+
+        // NOTE: out of bounds possible, checking
+        if v.len() == 17 {
+            Ok(BlockDeviceStats {
+                read_ios: v[0],
+                read_merges: v[1],
+                read_sectors: v[2],
+                read_ticks: v[3],
+                write_ios: v[4],
+                write_merges: v[5],
+                write_sectors: v[6],
+                write_ticks: v[7],
+                in_flight: v[8],
+                io_ticks: v[9],
+                time_in_queue: v[10],
+                discard_ios: v[11],
+                discard_merges: v[12],
+                discard_sectors: v[13],
+                discard_ticks: v[14],
+                flush_ios: v[15],
+                flush_ticks: v[16],
+            })
+        } else {
+            Err(Error::new(ErrorKind::InvalidData, ""))
+        }
+    }
+}
+
+#[test]
+fn get_block_device_stats() {
+    let stats = BlockDeviceStats::get("/sys/block/sda/sda5/stat").unwrap();
+    dbg!(stats);
 }
 
 #[test]
