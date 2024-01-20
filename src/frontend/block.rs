@@ -1,9 +1,30 @@
 use crate::frontend::icons::{ICON_DM, ICON_LOOP, ICON_SD, ICON_SR};
+use crate::limit_string;
 use crate::{b_to_gib, percent, progress_bar, BlockDevicesInfo, Mounts};
 use nix::sys::statvfs::statvfs;
 use std::io::Error;
 
 use super::human_b;
+
+// get text glyph icon str using device name
+pub fn get_storage_icon(device_name: &str) -> &str {
+    if device_name.starts_with("sd") {
+        // hdd, ssd
+        ICON_SD
+    } else if device_name.starts_with("sr") {
+        // cd, dvd
+        ICON_SR
+    } else if device_name.starts_with("dm") {
+        // kvm
+        ICON_DM
+    } else if device_name.starts_with("loop") {
+        // files as devices
+        ICON_LOOP
+    } else {
+        // other
+        ICON_SD
+    }
+}
 
 pub fn from_sys_block() -> Result<String, Error> {
     let mut s = String::new();
@@ -18,22 +39,7 @@ pub fn from_sys_block() -> Result<String, Error> {
             format!("/dev/{}", device.name)
         };
         let dev = device.dev.unwrap_or_default();
-        let icon = if device.name.starts_with("sd") {
-            // hdd, ssd
-            ICON_SD
-        } else if device.name.starts_with("sr") {
-            // cd, dvd
-            ICON_SR
-        } else if device.name.starts_with("dm") {
-            // kvm
-            ICON_DM
-        } else if device.name.starts_with("loop") {
-            // files as devices
-            ICON_LOOP
-        } else {
-            // other
-            ICON_SD
-        };
+        let icon = get_storage_icon(&device.name);
         let device_name = format!(
             "{} {}",
             device.vendor.unwrap_or_default(),
@@ -48,9 +54,9 @@ pub fn from_sys_block() -> Result<String, Error> {
             s += &format!(
                 " {} {:<25} {:<25} {:<25} {:>9} {} / {} {} ({:>6.2} %)\n",
                 icon,
-                path,
-                device_name,
-                mount.mnt_dir,
+                limit_string(&path, 25),
+                limit_string(&device_name, 25),
+                limit_string(&mount.mnt_dir, 25),
                 mount.mnt_type,
                 human_b(used as f64),
                 human_b(total as f64),
@@ -61,8 +67,8 @@ pub fn from_sys_block() -> Result<String, Error> {
             s += &format!(
                 " {} {:<25} {:<25}                                                  {}\n",
                 icon,
-                path,
-                device_name,
+                limit_string(&path, 25),
+                limit_string(&device_name, 25),
                 human_b(device.size as f64),
             );
         }
