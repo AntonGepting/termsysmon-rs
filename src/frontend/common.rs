@@ -64,6 +64,23 @@ pub fn human_units_ext(mut value: f64, units: &[&str]) -> String {
     format!("{:>6.1} {:>3}", value, unit)
 }
 
+pub fn limit_string(s: &str, length: usize) -> String {
+    let n = s.len();
+    let k = length / 2 - 2;
+
+    if n >= length {
+        format!("{}...{}", &s[..k], &s[(n - k)..])
+    } else {
+        s.to_string()
+    }
+}
+
+#[test]
+fn limit_string_test() {
+    let a = limit_string("123456789012345678901234567890", 20);
+    dbg!(a);
+}
+
 #[test]
 fn human_b_convert_test() {
     let s = human_b(2097151.0 * 512.0);
