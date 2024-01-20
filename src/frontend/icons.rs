@@ -13,7 +13,7 @@ pub const ICON_LO: &str = ""; // NOTE: string only looks empty for some fonts
 pub const ICON_DOCKER: &str = "󰡨";
 
 pub const ICON_RAM: &str = "";
-pub const ICON_SWAP: &str = "";
+pub const ICON_SWAP: &str = "";
 
 pub const ICON_MOTHERBOARD: &str = "󰚗";
 pub const ICON_BIOS: &str = "";
