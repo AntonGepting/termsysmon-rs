@@ -2,10 +2,16 @@ use std::fs::read_to_string;
 use std::io::Error;
 use std::path::Path;
 
-// read full file as a string and trim spaces and LF (line feed)
+/// read full file as a string and trim spaces and LF (line feed)
 pub fn get_string_from_file<P: AsRef<Path>>(path: P) -> Result<String, Error> {
     let buf = read_to_string(path)?;
     Ok(buf.trim().to_string())
+}
+
+/// get string from file in a base dir
+pub fn get_string_from_path(base_dir: &Path, file: &str) -> Option<String> {
+    let f = base_dir.join(file);
+    get_string_from_file(f).ok()
 }
 
 pub fn bool_from_str(s: &str) -> Option<bool> {
