@@ -1,31 +1,48 @@
 use crate::get_string_from_file;
 use std::collections::BTreeMap;
 use std::io::Error;
+use std::ops::{Deref, DerefMut};
 use std::str::FromStr;
 
 #[derive(Default, Debug)]
 pub struct Mounts {
+    /// BtreeMap<mnt_fsname, MountInfo{}>
     pub mounts: BTreeMap<String, MountInfo>,
 }
+
+impl Deref for Mounts {
+    type Target = BTreeMap<String, MountInfo>;
+    fn deref(&self) -> &BTreeMap<String, MountInfo> {
+        &self.mounts
+    }
+}
+
+impl DerefMut for Mounts {
+    fn deref_mut(&mut self) -> &mut BTreeMap<String, MountInfo> {
+        &mut self.mounts
+    }
+}
+
+pub const ETC_MTAB: &str = "/etc/mtab";
 
 // * 1. `/proc/self/mountinfo`
 // * 2. `/etc/mtab`
 // * 3. `/proc/mounts`
+// * /etc/fstab - static info
+// * mtab symlinc to mounts - dynamic info
+// * mountinfo - info for particular process
 //
 // children too search + rotation
 impl Mounts {
     pub fn get_from_mtab() -> Result<Self, Error> {
         let mut mounts = Mounts::default();
 
-        let buff = get_string_from_file("/etc/mtab")?;
+        let buff = get_string_from_file(ETC_MTAB)?;
 
         for line in buff.lines() {
             let (name, line) = line.split_once(' ').unwrap_or_default();
             let mount = line.parse().unwrap_or_default();
-            mounts
-                .mounts
-                .insert(name.to_string(), mount)
-                .unwrap_or_default();
+            mounts.insert(name.to_string(), mount).unwrap_or_default();
         }
 
         Ok(mounts)
