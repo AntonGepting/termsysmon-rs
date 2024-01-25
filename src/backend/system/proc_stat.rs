@@ -4,8 +4,6 @@ use std::ops::Deref;
 use std::ops::DerefMut;
 use std::str::FromStr;
 
-use crate::frontend::progress_bar;
-
 const PROC_STAT: &str = "/proc/stat";
 
 // `cpu  570820 2730 291925 11725884 37373 0 6446 0 0 0`
@@ -109,6 +107,7 @@ impl CpuStats {
 
 #[test]
 fn get_proc_stat_test() {
+    use crate::frontend::progress_bar;
     use std::{thread, time};
 
     loop {

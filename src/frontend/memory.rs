@@ -1,9 +1,9 @@
-use crate::procfs::{Meminfo, ProcError};
-use crate::{kib_to_gib, percent, MemInfo, ICON_RAM, ICON_SWAP};
+use crate::{percent, MemInfo, ICON_RAM, ICON_SWAP};
+use std::io::Error;
 
 use super::{human_b, progress_bar};
 
-pub fn from_proc_meminfo() -> Result<String, ProcError> {
+pub fn from_proc_meminfo() -> Result<String, Error> {
     let mut s = String::new();
 
     // let meminfo = Meminfo::new()?;
