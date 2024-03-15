@@ -48,6 +48,14 @@ const LOOP_BACKING_FILE: &str = "loop/backing_file";
 /// `/sys/block/<DEVICE>/dev`
 const DEV: &str = "dev";
 
+/// `/sys/block/<DEVICE>`/device/hwmon/hwmon*/temp`
+const DEVICE_HWMON: &str = "device/hwmon";
+
+const TEMP1_INPUT: &str = "temp1_input";
+const TEMP1_HIGHEST: &str = "temp1_highest";
+const TEMP1_LOWEST: &str = "temp1_lowest";
+const HWMON: &str = "hwmon";
+
 const BLOCK_SIZE_DEFAULT: usize = 512;
 
 // TODO: tree like lsblk
@@ -113,6 +121,13 @@ pub struct BlockDeviceInfo {
     // pub ro: Option<bool>,
     // `dev`
     pub dev: Option<String>,
+
+    // temperature, drivetemp kernel module required, m°C
+    pub temp_input: Option<usize>,
+    // m°C
+    pub temp_lowest: Option<usize>,
+    // m°C
+    pub temp_highest: Option<usize>,
 }
 
 impl BlockDeviceInfo {
@@ -177,8 +192,29 @@ impl BlockDeviceInfo {
         // `/sys/block/sda/sda*/holders/*/holders`
         // `/sys/block/sda/sda*/slaves/*/slaves`
 
+        // device.dev = get_string_from_path(path, HW);
+
+        if let Ok(dir) = std::fs::read_dir(path.join(DEVICE_HWMON)) {
+            // NOTE: only first temp will be used
+            // for entry in dir.flatten() {
+            if let Some(entry) = dir.flatten().next() {
+                if entry.file_name().to_string_lossy().contains(HWMON) {
+                    device.temp_input = get_string_from_path(&entry.path(), TEMP1_INPUT)
+                        .and_then(|s| s.parse().ok());
+                    device.temp_highest = get_string_from_path(&entry.path(), TEMP1_HIGHEST)
+                        .and_then(|s| s.parse().ok());
+                    device.temp_lowest = get_string_from_path(&entry.path(), TEMP1_LOWEST)
+                        .and_then(|s| s.parse().ok());
+                }
+            }
+        }
+
         Ok(device)
     }
+
+    // pub find_first() -> {
+
+    // }
 }
 
 // INFO: [kernel.org](https://www.kernel.org/doc/html/latest/block/stat.html )

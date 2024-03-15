@@ -49,8 +49,8 @@ fn update2() {
     loop {
         let mut s = String::new();
         // update output on screen begin, instead of concatenation
-        print!("{esc}[?1049h", esc = 27 as char);
-        print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
+        print!("\x1b[?1049h");
+        print!("\x1b[2J\x1b[1;1H");
 
         // print!("^[[2J");
         // print!("^[[;H");
@@ -75,7 +75,7 @@ fn update2() {
         s += &from_sys_class_net(&net_perf, dt).unwrap();
 
         print!("{}", s);
-        print!("{esc}[1049l", esc = 27 as char);
+        print!("\x1b[1049l");
 
         start = CpuStats::get().unwrap();
         net_start = ProcNetDevs::get().unwrap();

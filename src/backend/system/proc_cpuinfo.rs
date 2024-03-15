@@ -7,7 +7,7 @@ use std::fs::read_to_string;
 use std::io::Error;
 use std::str::FromStr;
 
-use crate::frontend::{human_mhz, progress_bar};
+use crate::frontend::{human_mhz_string, progress_bar};
 
 #[derive(Debug, Default)]
 pub struct CpusInfo {
@@ -99,7 +99,7 @@ pub fn from_proc_cpuinfo(p: &Vec<f64>) -> Result<String, Error> {
             "  CPU #{:<3} {:<50}                                          {} {} ({:>6.2} %)\n",
             cpu.processor,
             cpu.model_name,
-            human_mhz(cpu.cpu_mhz),
+            human_mhz_string(cpu.cpu_mhz),
             progress_bar(p[i + 1] as u64, 100, 20),
             p[i + 1]
         );
