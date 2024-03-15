@@ -37,31 +37,53 @@ pub fn bench(cb: &dyn Fn(), n: Option<u128>) {
     println!("Avg. exec time: {} ms ({} iterations)", t_avg, n);
 }
 
-pub fn human_b(mut value: f64) -> String {
-    let units = ["B", "KiB", "MiB", "GiB", "TiB"];
-    human_units_ext(value, &units)
-}
-
-pub fn human_mhz(mut value: f64) -> String {
-    let units = ["MHz", "GHz"];
-    human_units_ext(value, &units)
-}
-
-pub fn human_units_ext(mut value: f64, units: &[&str]) -> String {
-    // pub fn human_b_per_s(mut value: u64) -> String {
+pub fn human_b(mut value: f64) -> (f64, String) {
     const THOUSAND: f64 = 1024.0;
-    // const THOUSAND: u64 = 1024;
 
+    let units = ["B", "KiB", "MiB", "GiB", "TiB"];
+    human_units_ext(value, &units, THOUSAND)
+}
+
+pub fn human_b_string(value: f64) -> String {
+    let (value, unit) = human_b(value);
+    format!("{:>6.1} {:>3}", value, unit)
+}
+
+pub fn human_mhz(mut value: f64) -> (f64, String) {
+    const THOUSAND: f64 = 1000.0;
+
+    let units = ["MHz", "GHz"];
+    human_units_ext(value, &units, THOUSAND)
+}
+
+pub fn human_mhz_string(value: f64) -> String {
+    let (value, unit) = human_mhz(value);
+    format!("{:>6.1} {:>3}", value, unit)
+}
+
+// KBit/s, KB/s
+// pub fn human_b_per_s(mut value: u64) -> String {
+//
+
+// return tuple (value, unit)
+pub fn human_units_ext(mut value: f64, units: &[&str], thousand: f64) -> (f64, String) {
     let mut i = 0;
     let mut unit = units[i];
 
-    while (value > THOUSAND) && (i < units.len()) {
+    while (value >= thousand) && (i < units.len()) {
         i += 1;
-        value = value / THOUSAND;
-        // value = value / THOUSAND;
+        value = value / thousand;
         unit = units[i];
     }
-    format!("{:>6.1} {:>3}", value, unit)
+
+    (value, unit.to_string())
+    //format!("{:>6.1} {:>3}", value, unit)
+}
+
+#[test]
+fn human_b_test() {
+    let a = human_b(1024.0 * 1024.0);
+    dbg!(a);
 }
 
 pub fn limit_string(s: &str, length: usize) -> String {
@@ -95,6 +117,7 @@ fn human_b_convert_test() {
     dbg!(s);
 }
 
+// XXX: ? `[====>.....] 20 - 21 char len`
 // print progress bar string
 // x - current value
 // total - 100 % value

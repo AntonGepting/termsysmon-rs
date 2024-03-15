@@ -3,7 +3,7 @@ use crate::{
 };
 use std::io::Error;
 
-use super::human_b;
+use super::human_b_string;
 
 //
 // [info](https://developers.redhat.com/blog/2018/10/22/introduction-to-linux-interfaces-for-virtual-networking#bridge)
@@ -31,7 +31,7 @@ pub fn from_sys_class_net(perf: &ProcNetDevs, dt: u64) -> Result<String, Error> 
     let interfaces = NetInterfaces::get().unwrap();
 
     // br-77772d444cbb
-    for (name, interface) in interfaces.iter() {
+    for (i, (name, interface)) in interfaces.iter().enumerate() {
         let icon = if name.starts_with("wlp") {
             ICON_WIFI
         } else if name.starts_with("wlx") {
@@ -56,15 +56,22 @@ pub fn from_sys_class_net(perf: &ProcNetDevs, dt: u64) -> Result<String, Error> 
         let rx = stats.rx_bytes / dt;
         let tx = stats.tx_bytes / dt;
 
+        let odd_even = if i % 2 == 0 {
+            format!("\x1b[48;5;236m")
+        } else {
+            "".to_string()
+        };
+
         s += &format!(
-            " {} {:<15}  {:>17}  {:>17}  {:>35}                      rx: {}/s tx: {}/s\n",
+            " {}{} {:<15}  {:>17}  {:>17}  {:>35}                      rx: {}/s tx: {}/s\x1b[0m\n",
+            odd_even,
             icon,
             name,
             interface.mac,
             interface.ipv4,
             interface.ipv6,
-            human_b(rx as f64),
-            human_b(tx as f64)
+            human_b_string(rx as f64),
+            human_b_string(tx as f64),
         );
     }
 
