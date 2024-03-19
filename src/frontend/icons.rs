@@ -17,3 +17,4 @@ pub const ICON_SWAP: &str = "";
 
 pub const ICON_MOTHERBOARD: &str = "󰚗";
 pub const ICON_BIOS: &str = "";
+pub const ICON_KERNEL: &str = "";
