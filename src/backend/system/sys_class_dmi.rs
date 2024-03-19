@@ -56,11 +56,11 @@ pub fn from_sys_class_dmi() -> Result<String, Error> {
 
     let dmi_info = get_dmi_info()?;
     s += &format!(
-        " {} Board: {} {} {}\n",
+        " {} Board Name: {} Vendor: {} Version: {}\n",
         ICON_MOTHERBOARD, dmi_info.board_name, dmi_info.board_vendor, dmi_info.board_version
     );
     s += &format!(
-        " {} BIOS: {} {} {}\n",
+        " {} BIOS Vendor: {} Version: {} Date: {}\n",
         ICON_BIOS, dmi_info.bios_vendor, dmi_info.bios_version, dmi_info.bios_date
     );
 
