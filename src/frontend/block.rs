@@ -5,8 +5,7 @@
 
 use crate::frontend::icons::{ICON_DM, ICON_LOOP, ICON_SD, ICON_SR};
 use crate::limit_string;
-use crate::{b_to_gib, human_b_string, percent, progress_bar, BlockDevicesInfo, Mounts};
-use nix::sys::statvfs::statvfs;
+use crate::{b_to_gib, human_b_string, percent, progress_bar, BlockDevicesInfo, Mounts, Statvfs};
 use std::io::Error;
 
 // get text glyph icon str using device name
@@ -66,9 +65,9 @@ pub fn from_sys_block() -> Result<String, Error> {
             "".to_string()
         };
         if let Some(mount) = mtab.mounts.get(&path) {
-            let stat = statvfs(mount.mnt_dir.as_str()).unwrap();
-            let available = stat.block_size() * stat.blocks_available();
-            let total = stat.block_size() * stat.blocks();
+            let stat = Statvfs::get(mount.mnt_dir.as_str()).unwrap();
+            let available = stat.f_bsize * stat.f_bavail;
+            let total = stat.f_bsize * stat.f_blocks;
             let used = total - available;
             let percent = percent(used as f64, total as f64);
             s += &format!(

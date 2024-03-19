@@ -313,8 +313,7 @@ fn get_block_info_size_test() {
     use crate::b_to_gib;
     use crate::frontend::icons::{ICON_DM, ICON_LOOP, ICON_SD, ICON_SR};
     use crate::Mounts;
-    use crate::{percent, progress_bar};
-    use nix::sys::statvfs::statvfs;
+    use crate::{percent, progress_bar, Statvfs};
 
     let mut bi = BlockDevicesInfo::get().unwrap();
     bi.devices.sort();
@@ -343,9 +342,9 @@ fn get_block_info_size_test() {
             device.model.unwrap_or_default()
         );
         if let Some(mount) = mtab.mounts.get(&path) {
-            let stat = statvfs(mount.mnt_dir.as_str()).unwrap();
-            let available = stat.block_size() * stat.blocks_available();
-            let total = stat.block_size() * stat.blocks();
+            let stat = Statvfs::get(mount.mnt_dir.as_str()).unwrap();
+            let available = stat.f_bsize * stat.f_bavail;
+            let total = stat.f_bsize * stat.f_blocks;
             let used = total - available;
             let percent = percent(used as f64, total as f64);
             println!(
