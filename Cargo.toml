@@ -7,8 +7,6 @@ edition = "2021"
 
 [dependencies]
 chrono = "0.4.31"
-# purpose:
-#  * network: `ifaddrs::getifaddrs`, `socket::SockaddrStorage`
-#  * block devices: `statvfs`
-# nix = { version = "0.27.1", features = ["net", "fs"] }
+
+# need for statvfs, getifaddrs
 libc = "*"
