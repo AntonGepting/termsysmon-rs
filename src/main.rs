@@ -2,7 +2,7 @@ use std::str;
 use std::thread::sleep;
 use std::time::Duration;
 
-extern crate nix;
+extern crate libc;
 
 mod backend;
 use backend::*;
@@ -45,6 +45,12 @@ fn update2() {
     let mut net_start = ProcNetDevs::get().unwrap();
     let dt = 3000;
 
+    let uname = Uname::get().unwrap();
+    let uname_str = &format!(
+        " {} Kernel: {} {} {} Distro: {:<20} \n",
+        ICON_KERNEL, uname.sysname, uname.release, uname.machine, uname.version
+    );
+
     // update
     loop {
         let mut s = String::new();
@@ -62,9 +68,17 @@ fn update2() {
         let mut net_curr = ProcNetDevs::get().unwrap();
         let net_perf = net_curr.diff(&net_start);
 
+        let uptime = Uptime::get().unwrap();
+
         // strings updated every ... seconds
         s += &format!("{}\n", L_SYSTEM);
+        s += &uname_str;
         s += &once;
+        s += &format!(
+            " 󱑍 Uptime: {} Idle: {}\n",
+            duration_to_time_string(uptime.uptime),
+            duration_to_time_string(uptime.idle)
+        );
         s += &format!("{}\n", L_CPU);
         s += &from_proc_cpuinfo(&p).unwrap();
         s += &format!("{}\n", L_MEM);
