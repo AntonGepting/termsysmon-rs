@@ -67,9 +67,9 @@ pub fn from_sys_class_net(perf: &ProcNetDevs, dt: u64) -> Result<String, Error> 
             odd_even,
             icon,
             name,
-            interface.mac,
-            interface.ipv4,
-            interface.ipv6,
+            interface.mac.clone().unwrap_or_default(),
+            interface.ipv4.clone().unwrap_or_default(),
+            interface.ipv6.clone().unwrap_or_default(),
             human_b_string(rx as f64),
             human_b_string(tx as f64),
         );
