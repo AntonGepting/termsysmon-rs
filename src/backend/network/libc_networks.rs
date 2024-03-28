@@ -46,6 +46,24 @@ impl NetInterfaces {
             unsafe {
                 // iterate and save
                 loop {
+                    // let addr = (*ifa).ifa_netmask;
+                    // if (*addr).sa_family == libc::AF_INET as u16 {
+                    //     libc::getnameinfo(
+                    //         addr,
+                    //         mem::size_of::<libc::sockaddr_in>() as u32,
+                    //         host.as_mut_ptr(),
+                    //         libc::NI_MAXHOST,
+                    //         std::ptr::null_mut(),
+                    //         0,
+                    //         libc::NI_NUMERICHOST,
+                    //     );
+                    //     // let name = CStr::from_ptr((*ifa).ifa_name)
+                    //     // .to_str()
+                    //     // .unwrap_or_default()
+                    //     // .to_string();
+                    //     // dbg!(name);
+                    // }
+
                     let addr = (*ifa).ifa_addr;
 
                     // get IPv4 address
@@ -60,6 +78,7 @@ impl NetInterfaces {
                             0,
                             libc::NI_NUMERICHOST,
                         );
+
                         let name = CStr::from_ptr((*ifa).ifa_name)
                             .to_str()
                             .unwrap_or_default()
@@ -78,6 +97,7 @@ impl NetInterfaces {
 
                     // get IPv6 address
                     } else if (*addr).sa_family == libc::AF_INET6 as u16 {
+                        // XXX: alternative inet_ntop
                         libc::getnameinfo(
                             addr,
                             mem::size_of::<libc::sockaddr_in6>() as u32,

@@ -71,26 +71,26 @@ impl FromStr for ProcNetDevData {
     }
 }
 
-impl ProcNetDevData {
-    pub fn diff(&mut self, other: &ProcNetDevData) -> &mut Self {
-        self.rx_bytes -= other.rx_bytes;
-        self.rx_packets -= other.rx_packets;
-        self.rx_errors -= other.rx_errors;
-        self.rx_dropped -= other.rx_dropped;
-        self.rx_fifo_errors -= other.rx_fifo_errors;
-        self.rx_frame_errors -= other.rx_frame_errors;
-        self.rx_compressed -= other.rx_compressed;
-        self.rx_multicast -= other.rx_multicast;
-        self.tx_bytes -= other.tx_bytes;
-        self.tx_packets -= other.tx_packets;
-        self.tx_errors -= other.tx_errors;
-        self.tx_dropped -= other.tx_dropped;
-        self.tx_fifo_errors -= other.tx_fifo_errors;
-        self.tx_collisions -= other.tx_collisions;
-        self.tx_carrier_errors -= other.tx_carrier_errors;
-        self
-    }
-}
+// impl ProcNetDevData {
+//     pub fn diff(&mut self, other: &ProcNetDevData) -> &mut Self {
+//         self.rx_bytes -= other.rx_bytes;
+//         self.rx_packets -= other.rx_packets;
+//         self.rx_errors -= other.rx_errors;
+//         self.rx_dropped -= other.rx_dropped;
+//         self.rx_fifo_errors -= other.rx_fifo_errors;
+//         self.rx_frame_errors -= other.rx_frame_errors;
+//         self.rx_compressed -= other.rx_compressed;
+//         self.rx_multicast -= other.rx_multicast;
+//         self.tx_bytes -= other.tx_bytes;
+//         self.tx_packets -= other.tx_packets;
+//         self.tx_errors -= other.tx_errors;
+//         self.tx_dropped -= other.tx_dropped;
+//         self.tx_fifo_errors -= other.tx_fifo_errors;
+//         self.tx_collisions -= other.tx_collisions;
+//         self.tx_carrier_errors -= other.tx_carrier_errors;
+//         self
+//     }
+// }
 
 // impl Sub for ProcNetDevData {
 //     type Output = Self;
@@ -159,13 +159,13 @@ impl ProcNetDevs {
         Ok(devs)
     }
 
-    pub fn diff(&mut self, other: &ProcNetDevs) -> &mut Self {
-        for (name, data) in self.devs.iter_mut() {
-            let entry = other.get(name).unwrap();
-            data.diff(entry);
-        }
-        self
-    }
+    // pub fn diff(&mut self, other: &ProcNetDevs) -> &mut Self {
+    //     for (name, data) in self.devs.iter_mut() {
+    //         let entry = other.get(name).unwrap();
+    //         data.diff(entry);
+    //     }
+    //     self
+    // }
 }
 
 // impl Sub for ProcNetDevs {
@@ -206,9 +206,10 @@ fn proc_net_dev_test() {
     loop {
         let mut devs2 = ProcNetDevs::get().unwrap();
 
-        devs2.diff(&devs);
         for (name, dev) in devs2.iter() {
-            println!("{}: {} B {} B", name, dev.rx_bytes, dev.tx_bytes);
+            let rx = dev.rx_bytes - devs2.get(name).unwrap().rx_bytes;
+            let tx = dev.tx_bytes - devs2.get(name).unwrap().tx_bytes;
+            println!("{}: {} B {} B", name, rx, tx);
         }
 
         devs = ProcNetDevs::get().unwrap();
