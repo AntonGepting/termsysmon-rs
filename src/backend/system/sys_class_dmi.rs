@@ -50,19 +50,3 @@ pub fn get_dmi_info() -> Result<DmiInfo, Error> {
 
     Ok(dmi_info)
 }
-
-pub fn from_sys_class_dmi() -> Result<String, Error> {
-    let mut s = String::new();
-
-    let dmi_info = get_dmi_info()?;
-    s += &format!(
-        " {} Board Name: {} Vendor: {} Version: {}\n",
-        ICON_MOTHERBOARD, dmi_info.board_name, dmi_info.board_vendor, dmi_info.board_version
-    );
-    s += &format!(
-        " {} BIOS Vendor: {} Version: {} Date: {}\n",
-        ICON_BIOS, dmi_info.bios_vendor, dmi_info.bios_version, dmi_info.bios_date
-    );
-
-    Ok(s)
-}

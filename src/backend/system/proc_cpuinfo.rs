@@ -88,22 +88,3 @@ impl FromStr for CpusInfo {
         Ok(cpus)
     }
 }
-
-pub fn from_proc_cpuinfo(p: &Vec<f64>) -> Result<String, Error> {
-    let mut s = String::new();
-
-    let cpus = get_cpuinfo()?;
-
-    for (i, cpu) in cpus.cpus.iter().enumerate() {
-        s += &format!(
-            "  CPU #{:<3} {:<50}                                          {} {} ({:>6.2} %)\n",
-            cpu.processor,
-            cpu.model_name,
-            human_mhz_string(cpu.cpu_mhz),
-            progress_bar(p[i + 1] as u64, 100, 20),
-            p[i + 1]
-        );
-    }
-
-    Ok(s)
-}
