@@ -14,6 +14,7 @@ pub fn get_string_from_path(base_dir: &Path, file: &str) -> Option<String> {
     get_string_from_file(f).ok()
 }
 
+// XXX: Result or Option
 pub fn bool_from_str(s: &str) -> Option<bool> {
     match s {
         "1" => Some(true),
