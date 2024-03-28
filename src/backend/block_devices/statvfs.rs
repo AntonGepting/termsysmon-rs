@@ -1,6 +1,6 @@
+/// storage stat (e.g. free size, avail size, total size)
+///
 use libc;
-
-// use procfs::process::MountInfo;
 use std::ffi::CString;
 use std::io::Error;
 use std::mem;
@@ -11,6 +11,7 @@ use std::path::Path;
 //     unsafe { &mut *libc::__errno_location() }
 // }
 
+// INFO: storage stat (e.g. free size, avail size, total size)
 // statfs - OS specific
 // statvfs - POSIX conform
 #[derive(Debug, Default)]
@@ -30,27 +31,27 @@ pub struct Statvfs {
 
 impl Statvfs {
     pub fn get<P: AsRef<Path>>(path: P) -> Result<Self, Error> {
+        // zero mem
         let mut statvfs: libc::statvfs = unsafe { mem::zeroed() };
+        // path to C-String
+        let path = CString::new(path.as_ref().to_string_lossy().into_owned()).unwrap_or_default();
 
-        let path = CString::new(path.as_ref().to_string_lossy().into_owned()).unwrap();
-
+        // get & save statvfs
         let result = unsafe { libc::statvfs(path.as_ptr(), &mut statvfs) };
         if result == 0 {
-            let mut st = Statvfs::default();
-
-            st.f_bsize = statvfs.f_bsize;
-            st.f_frsize = statvfs.f_frsize;
-            st.f_blocks = statvfs.f_blocks;
-            st.f_bfree = statvfs.f_bfree;
-            st.f_bavail = statvfs.f_bavail;
-            st.f_files = statvfs.f_files;
-            st.f_ffree = statvfs.f_ffree;
-            st.f_favail = statvfs.f_favail;
-            st.f_fsid = statvfs.f_fsid;
-            st.f_flag = statvfs.f_flag;
-            st.f_namemax = statvfs.f_namemax;
-
-            Ok(st)
+            Ok(Statvfs {
+                f_bsize: statvfs.f_bsize,
+                f_frsize: statvfs.f_frsize,
+                f_blocks: statvfs.f_blocks,
+                f_bfree: statvfs.f_bfree,
+                f_bavail: statvfs.f_bavail,
+                f_files: statvfs.f_files,
+                f_ffree: statvfs.f_ffree,
+                f_favail: statvfs.f_favail,
+                f_fsid: statvfs.f_fsid,
+                f_flag: statvfs.f_flag,
+                f_namemax: statvfs.f_namemax,
+            })
         } else {
             Err(Error::last_os_error())
         }

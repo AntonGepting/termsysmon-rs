@@ -5,25 +5,28 @@ use std::ops::{Deref, DerefMut};
 use std::str::FromStr;
 
 #[derive(Default, Debug)]
-pub struct Mounts {
-    /// BtreeMap<mnt_fsname, MountInfo{}>
+pub struct BlockDevicesMounts {
+    /// `BTreeMap<mnt_fsname, MountInfo{}>`
     pub mounts: BTreeMap<String, MountInfo>,
 }
 
-impl Deref for Mounts {
+impl Deref for BlockDevicesMounts {
     type Target = BTreeMap<String, MountInfo>;
     fn deref(&self) -> &BTreeMap<String, MountInfo> {
         &self.mounts
     }
 }
 
-impl DerefMut for Mounts {
+impl DerefMut for BlockDevicesMounts {
     fn deref_mut(&mut self) -> &mut BTreeMap<String, MountInfo> {
         &mut self.mounts
     }
 }
 
-pub const ETC_MTAB: &str = "/etc/mtab";
+/// `/etc/mtab` - file contains all current mounts
+pub(crate) const ETC_MTAB: &str = "/etc/mtab";
+/// ` ` - space
+pub(crate) const MTAB_SEPARATOR: &str = " ";
 
 // * 1. `/proc/self/mountinfo`
 // * 2. `/etc/mtab`
@@ -33,14 +36,14 @@ pub const ETC_MTAB: &str = "/etc/mtab";
 // * mountinfo - info for particular process
 //
 // children too search + rotation
-impl Mounts {
+impl BlockDevicesMounts {
     pub fn get_from_mtab() -> Result<Self, Error> {
-        let mut mounts = Mounts::default();
+        let mut mounts = BlockDevicesMounts::default();
 
         let buff = get_string_from_file(ETC_MTAB)?;
 
         for line in buff.lines() {
-            let (name, line) = line.split_once(' ').unwrap_or_default();
+            let (name, line) = line.split_once(MTAB_SEPARATOR).unwrap_or_default();
             let mount = line.parse().unwrap_or_default();
             mounts.insert(name.to_string(), mount).unwrap_or_default();
         }
@@ -49,19 +52,20 @@ impl Mounts {
     }
 }
 
+/// Mount information
 #[derive(Default, Debug)]
 pub struct MountInfo {
     // name of mounted filesystem
     // pub mnt_fsname: String,
-    // filesystem path prefix
+    /// filesystem path prefix
     pub mnt_dir: String,
-    // mount type
+    /// mount type
     pub mnt_type: String,
-    // mount options
+    /// mount options
     pub mnt_opts: String,
-    // dump frequency in days
+    /// dump frequency in days
     pub mnt_freq: usize,
-    // pass number on parallel fsck
+    /// pass number on parallel fsck
     pub mnt_passno: usize,
 }
 
@@ -75,9 +79,11 @@ impl FromStr for MountInfo {
 
         let v: Vec<&str> = s.split_whitespace().collect();
 
+        // skip name, already saved in previous step
         // if let Some(mnt_fsname) = v.get(0) {
         // mount.mnt_fsname = mnt_fsname.to_string();
         // }
+
         if let Some(mnt_dir) = v.get(0) {
             mount.mnt_dir = mnt_dir.to_string();
         }
@@ -100,7 +106,7 @@ impl FromStr for MountInfo {
 
 #[test]
 fn bench_get_from_mtab2_test() {
-    let mounts = Mounts::get_from_mtab().unwrap();
+    let mounts = BlockDevicesMounts::get_from_mtab().unwrap();
     dbg!(&mounts);
     for (mnt_fsname, mount) in mounts.mounts {
         if mnt_fsname.starts_with("/dev/") {
