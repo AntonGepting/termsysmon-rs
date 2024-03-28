@@ -1,3 +1,5 @@
+use crate::Uptime;
+use std::io::Error;
 use std::time::Duration;
 
 pub fn duration_to_time_string(t: Duration) -> String {
@@ -16,4 +18,13 @@ fn uptime_to_string_test() {
     let a = Duration::from_secs(3600 + 62);
     let s = duration_to_time_string(a);
     dbg!(s);
+}
+
+pub fn uptime_to_string() -> Result<String, Error> {
+    let uptime = Uptime::get().unwrap();
+    Ok(format!(
+        " 󱑍  Uptime: {} Idle: {}\n",
+        duration_to_time_string(uptime.uptime),
+        duration_to_time_string(uptime.idle)
+    ))
 }

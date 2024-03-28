@@ -1,13 +1,19 @@
 pub mod block;
 pub mod common;
+pub mod cpu;
+pub mod dmi;
 pub mod icons;
 pub mod memory;
 pub mod network;
+pub mod uname;
 pub mod uptime;
 
 pub use block::*;
 pub use common::*;
+pub use cpu::*;
+pub use dmi::*;
 pub use icons::*;
 pub use memory::*;
 pub use network::*;
+pub use uname::*;
 pub use uptime::*;

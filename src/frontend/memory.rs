@@ -1,9 +1,9 @@
-use crate::{percent, MemInfo, ICON_RAM, ICON_SWAP};
+use crate::{odd_even, percent, MemInfo, ICON_GPU, ICON_RAM, ICON_SWAP};
 use std::io::Error;
 
-use super::{human_b_string, progress_bar};
+use super::{human_byte_string, progress_bar};
 
-pub fn from_proc_meminfo() -> Result<String, Error> {
+pub fn proc_meminfo_to_string() -> Result<String, Error> {
     let mut s = String::new();
 
     // let meminfo = Meminfo::new()?;
@@ -14,37 +14,46 @@ pub fn from_proc_meminfo() -> Result<String, Error> {
 
     // percent used mem
     let mem_used = meminfo.mem_total - mem_available;
-    let percent_mem_used = percent(mem_used as f64, meminfo.mem_total as f64);
+    let percent_mem_used = percent(mem_used as f64, meminfo.mem_total as f64) as u64;
 
+    let even = odd_even(0);
     // show free, total, percent used mem
     s += &format!(
-        " {} RAM                                                                                     {} / {} {} ({:>6.2} %)\n",
+        "{} {}  RAM                                                     {} / {} {} ({:>3} %)\n",
+        even,
         ICON_RAM,
-        human_b_string(mem_used as f64 * 1000.0),
-        human_b_string(meminfo.mem_total as f64 * 1000.0),
+        human_byte_string(mem_used as f64 * 1000.0),
+        human_byte_string(meminfo.mem_total as f64 * 1000.0),
         progress_bar(mem_used, meminfo.mem_total, 20),
         percent_mem_used
     );
 
     // percent used swap
     let swap_used = meminfo.swap_total - meminfo.swap_free;
-    let percent_swap_used = percent(swap_used as f64, meminfo.swap_total as f64);
+    let percent_swap_used = percent(swap_used as f64, meminfo.swap_total as f64) as u64;
 
+    let odd = odd_even(1);
     // show free, total, percent used swap
     s += &format!(
-        " {} Swap                                                                                    {} / {} {} ({:>6.2} %)\n",
+        "{} {}  Swap                                                    {} / {} {} ({:>3} %)\n",
+        odd,
         ICON_SWAP,
-        human_b_string(swap_used as f64 * 1000.0),
-        human_b_string(meminfo.swap_total as f64 * 1000.0),
+        human_byte_string(swap_used as f64 * 1000.0),
+        human_byte_string(meminfo.swap_total as f64 * 1000.0),
         progress_bar(swap_used, meminfo.swap_total, 20),
         percent_swap_used
     );
+
+    // s += &format!(
+    // "{} {}  GPU                                                    \n",
+    // even, ICON_GPU,
+    // );
 
     Ok(s)
 }
 
 fn bench_meminfo() {
-    let s = from_proc_meminfo().unwrap();
+    let s = proc_meminfo_to_string().unwrap();
     println!("{}", s);
 }
 

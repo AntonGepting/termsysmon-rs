@@ -1,3 +1,9 @@
+/// helper functions
+///
+
+pub(crate) const THOUSAND_TWENTY_FOUR: f64 = 1024.0;
+pub(crate) const THOUSAND: f64 = 1000.0;
+
 // bytes into float GiB (n / 1024^3)
 pub fn b_to_gib(n: u64) -> f64 {
     (n as f64) / (usize::pow(1024, 3) as f64)
@@ -37,28 +43,51 @@ pub fn bench(cb: &dyn Fn(), n: Option<u128>) {
     println!("Avg. exec time: {} ms ({} iterations)", t_avg, n);
 }
 
-pub fn human_b(mut value: f64) -> (f64, String) {
-    const THOUSAND: f64 = 1024.0;
-
+// human friendly (e.g. Byte, Kilo, Mega, ...)
+pub fn human_byte(mut value: f64) -> (f64, String) {
     let units = ["B", "KiB", "MiB", "GiB", "TiB"];
-    human_units_ext(value, &units, THOUSAND)
+    human_units_ext(value, &units, THOUSAND_TWENTY_FOUR)
 }
 
-pub fn human_b_string(value: f64) -> String {
-    let (value, unit) = human_b(value);
-    format!("{:>6.1} {:>3}", value, unit)
+// human friendly byte string (e.g. Byte, Kilo, Mega, ...)
+pub fn human_byte_string(value: f64) -> String {
+    let (value, unit) = human_byte(value);
+    format!("{:>6.1} {:>4}", value, unit)
 }
 
+// human friendly (e.g. Byte, Kilo, Mega, ...)
+pub fn human_byteps(mut value: f64) -> (f64, String) {
+    let units = ["B/s", "KiB/s", "MiB/s", "GiB/s"];
+    human_units_ext(value, &units, THOUSAND_TWENTY_FOUR)
+}
+
+// human friendly byte string (e.g. Byte, Kilo, Mega, ...)
+pub fn human_byteps_string(value: f64) -> String {
+    let (value, unit) = human_bitps(value);
+    format!("{:>6.1} {:>4}", value, unit)
+}
+// human friendly (e.g. Byte, Kilo, Mega, ...)
+pub fn human_bitps(mut value: f64) -> (f64, String) {
+    let units = ["Bit/s", "KBit/s", "MBit/s", "GBit/s"];
+    human_units_ext(value * 8.0, &units, THOUSAND)
+}
+
+// human friendly byte string (e.g. Byte, Kilo, Mega, ...)
+pub fn human_bitps_string(value: f64) -> String {
+    let (value, unit) = human_bitps(value);
+    format!("{:>6.1} {:>6}", value, unit)
+}
+
+// human friendly Hz (e.g. Hz, KHz, MHz, ...)
 pub fn human_mhz(mut value: f64) -> (f64, String) {
-    const THOUSAND: f64 = 1000.0;
-
     let units = ["MHz", "GHz"];
     human_units_ext(value, &units, THOUSAND)
 }
 
+// human friendly Hz string (e.g. Hz, KHz, MHz, ...)
 pub fn human_mhz_string(value: f64) -> String {
     let (value, unit) = human_mhz(value);
-    format!("{:>6.1} {:>3}", value, unit)
+    format!("{:>6.1} {:>4}", value, unit)
 }
 
 // KBit/s, KB/s
@@ -80,18 +109,28 @@ pub fn human_units_ext(mut value: f64, units: &[&str], thousand: f64) -> (f64, S
     //format!("{:>6.1} {:>3}", value, unit)
 }
 
+pub fn odd_even(i: usize) -> String {
+    let odd_even = if i % 2 == 0 {
+        format!("\x1b[48;5;236m")
+    } else {
+        format!("\x1b[0m")
+    };
+    odd_even
+}
+
 #[test]
 fn human_b_test() {
-    let a = human_b(1024.0 * 1024.0);
+    let a = human_byte(1024.0 * 1024.0);
     dbg!(a);
 }
 
+// limit string to size of given length (e.g. `abcd...xyz`)
 pub fn limit_string(s: &str, length: usize) -> String {
     let n = s.len();
-    let k = length / 2 - 2;
+    let k = length / 2 - 1;
 
     if n >= length {
-        format!("{}...{}", &s[..k], &s[(n - k)..])
+        format!("{}..{}", &s[..k], &s[(n - k)..])
     } else {
         s.to_string()
     }
@@ -99,21 +138,21 @@ pub fn limit_string(s: &str, length: usize) -> String {
 
 #[test]
 fn limit_string_test() {
-    let a = limit_string("123456789012345678901234567890", 20);
-    dbg!(a);
+    let r = limit_string("123456789|abcdef|123456789", 20);
+    assert_eq!(r, "123456789..123456789");
 }
 
 #[test]
 fn human_b_convert_test() {
-    let s = human_b(2097151.0 * 512.0);
+    let s = human_byte(2097151.0 * 512.0);
     dbg!(s);
-    let s = human_b(1025.0);
+    let s = human_byte(1025.0);
     dbg!(s);
-    let s = human_b(900001025.0);
+    let s = human_byte(900001025.0);
     dbg!(s);
-    let s = human_b(1001025.0);
+    let s = human_byte(1001025.0);
     dbg!(s);
-    let s = human_b(25.0);
+    let s = human_byte(25.0);
     dbg!(s);
 }
 

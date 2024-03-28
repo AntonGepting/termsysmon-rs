@@ -1,9 +1,11 @@
+use crate::odd_even;
 use crate::{
     NetInterfaces, ProcNetDevs, ICON_BR, ICON_DOCKER, ICON_ETH, ICON_LO, ICON_VETH, ICON_WIFI,
 };
 use std::io::Error;
 
-use super::human_b_string;
+use super::human_bitps_string;
+use super::human_byte_string;
 
 //
 // [info](https://developers.redhat.com/blog/2018/10/22/introduction-to-linux-interfaces-for-virtual-networking#bridge)
@@ -25,10 +27,11 @@ use super::human_b_string;
 // * dummy
 // * ifb
 // * sim
-pub fn from_sys_class_net(perf: &ProcNetDevs, dt: u64) -> Result<String, Error> {
+pub fn sys_class_net_to_string(net_snapshot0: &mut ProcNetDevs, dt: u64) -> Result<String, Error> {
     let mut s = String::new();
 
     let interfaces = NetInterfaces::get().unwrap();
+    let net_snapshot1 = ProcNetDevs::get().unwrap();
 
     // br-77772d444cbb
     for (i, (name, interface)) in interfaces.iter().enumerate() {
@@ -50,30 +53,29 @@ pub fn from_sys_class_net(perf: &ProcNetDevs, dt: u64) -> Result<String, Error> 
             ICON_ETH
         };
 
-        let stats = perf.get(name).unwrap();
+        let stats0 = net_snapshot0.get(name).unwrap();
+        let stats1 = net_snapshot1.get(name).unwrap();
 
-        let dt = dt / 1000;
-        let rx = stats.rx_bytes / dt;
-        let tx = stats.tx_bytes / dt;
+        // let dt = dt / 1000;
+        let rx = (stats1.rx_bytes - stats0.rx_bytes) / dt;
+        let tx = (stats1.tx_bytes - stats0.tx_bytes) / dt;
 
-        let odd_even = if i % 2 == 0 {
-            format!("\x1b[48;5;236m")
-        } else {
-            "".to_string()
-        };
+        let odd_even = odd_even(i);
 
         s += &format!(
-            " {}{} {:<15}  {:>17}  {:>17}  {:>35}                      rx: {}/s tx: {}/s\x1b[0m\n",
+            "{} {}  {:<15}  {:>17}  {:>17}  {:>35}   rx: {:>11}  tx: {:>11}\x1b[0m\n",
             odd_even,
             icon,
             name,
             interface.mac.clone().unwrap_or_default(),
             interface.ipv4.clone().unwrap_or_default(),
             interface.ipv6.clone().unwrap_or_default(),
-            human_b_string(rx as f64),
-            human_b_string(tx as f64),
+            human_bitps_string(rx as f64),
+            human_bitps_string(tx as f64),
         );
     }
+
+    *net_snapshot0 = net_snapshot1;
 
     Ok(s)
 }

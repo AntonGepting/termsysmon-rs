@@ -36,20 +36,18 @@ const L_NETWORK: &str =
 // 100ms = like conky average (0.7)
 // 500ms = like conky average (0.3)
 // 1000ms = not seen in top processes
-fn update2() {
+fn update() {
     // strings produced once on start
     let mut once = String::new();
-    once += &from_sys_class_dmi().unwrap();
+    once += &uname_to_string().unwrap();
+    once += &sys_class_dmi_to_string().unwrap();
 
-    let mut start = CpuStats::get().unwrap();
-    let mut net_start = ProcNetDevs::get().unwrap();
-    let dt = 3000;
+    let mut cpu_snapshot0 = CpuStats::get().unwrap();
+    let mut net_snapshot0 = ProcNetDevs::get().unwrap();
+    let mut block_snapshot0 = SysBlockInfos::get().unwrap();
 
-    let uname = Uname::get().unwrap();
-    let uname_str = &format!(
-        " {} Kernel: {} {} {} Distro: {:<20} \n",
-        ICON_KERNEL, uname.sysname, uname.release, uname.machine, uname.version
-    );
+    // time between snapshots in s
+    let dt = 5;
 
     // update
     loop {
@@ -58,55 +56,40 @@ fn update2() {
         print!("\x1b[?1049h");
         print!("\x1b[2J\x1b[1;1H");
 
+        // ???
         // print!("^[[2J");
         // print!("^[[;H");
         // print!("\\e[H");
 
-        let end = CpuStats::get().unwrap();
-        let p = end.get_performance(&start);
-
-        let mut net_curr = ProcNetDevs::get().unwrap();
-        let net_perf = net_curr.diff(&net_start);
-
-        let uptime = Uptime::get().unwrap();
-
-        // strings updated every ... seconds
+        // strings updated every dt seconds
         s += &format!("{}\n", L_SYSTEM);
-        s += &uname_str;
         s += &once;
-        s += &format!(
-            " 󱑍 Uptime: {} Idle: {}\n",
-            duration_to_time_string(uptime.uptime),
-            duration_to_time_string(uptime.idle)
-        );
+        s += &uptime_to_string().unwrap();
         s += &format!("{}\n", L_CPU);
-        s += &from_proc_cpuinfo(&p).unwrap();
+        s += &proc_cpuinfo_to_string(&mut cpu_snapshot0).unwrap();
         s += &format!("{}\n", L_MEM);
-        s += &from_proc_meminfo().unwrap();
+        s += &proc_meminfo_to_string().unwrap();
         s += &format!("{}\n", L_DISKS);
-        s += &from_sys_block().unwrap();
+        s += &sys_block_to_string(&mut block_snapshot0, dt).unwrap();
         s += &format!("{}\n", L_NETWORK);
-        s += &from_sys_class_net(&net_perf, dt).unwrap();
+        s += &sys_class_net_to_string(&mut net_snapshot0, dt).unwrap();
 
         print!("{}", s);
         print!("\x1b[1049l");
 
-        start = CpuStats::get().unwrap();
-        net_start = ProcNetDevs::get().unwrap();
-
-        sleep(Duration::from_millis(dt));
+        sleep(Duration::from_secs(dt));
     }
 }
 
 #[test]
-fn update2_test() {
+fn update_test() {
     use crate::bench;
 
-    bench(&update2, Some(100));
+    bench(&update, Some(100));
 }
 
 fn main() {
     //    calendar();
     // update();
-    update2();
+    update();
 }
